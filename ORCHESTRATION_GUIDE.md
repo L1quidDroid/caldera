@@ -205,8 +205,8 @@ Starting Campaign: Q4 2025 Purple Team Exercise
 ✓ Phase 2: Preparing agent enrollment...
 ✓ Creating operation...
 
-✅ Operation created: a7c857-37a0-4c4a-85f7-4e9f7f30e31a
-✅ Campaign started
+Operation created: a7c857-37a0-4c4a-85f7-4e9f7f30e31a
+Campaign started
 ```
 
 ### 5. Monitor Status
