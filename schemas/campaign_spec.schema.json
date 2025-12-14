@@ -1,0 +1,424 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Caldera Campaign Specification",
+  "description": "Centralized configuration for multi-phase adversary emulation campaigns",
+  "type": "object",
+  "required": [
+    "campaign_id",
+    "name",
+    "environment",
+    "mode",
+    "created_at"
+  ],
+  "properties": {
+    "campaign_id": {
+      "type": "string",
+      "description": "Unique identifier for the campaign (UUID recommended)",
+      "pattern": "^[a-f0-9-]{36}$"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable campaign name",
+      "minLength": 3,
+      "maxLength": 100
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed campaign description and objectives"
+    },
+    "environment": {
+      "type": "object",
+      "required": ["environment_id", "type"],
+      "properties": {
+        "environment_id": {
+          "type": "string",
+          "description": "Environment identifier (e.g., dev-001, staging-02, prod-main)"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["development", "staging", "production", "test"],
+          "description": "Environment classification"
+        },
+        "caldera_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Base URL for Caldera instance"
+        },
+        "api_key_red": {
+          "type": "string",
+          "description": "Red team API key"
+        },
+        "api_key_blue": {
+          "type": "string",
+          "description": "Blue team API key"
+        },
+        "infrastructure": {
+          "type": "object",
+          "properties": {
+            "caldera_host": {"type": "string"},
+            "red_vms": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "blue_vms": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "network_cidr": {"type": "string"}
+          }
+        }
+      }
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["test", "production", "simulation", "validation"],
+      "description": "Execution mode determines safety guardrails and notifications"
+    },
+    "targets": {
+      "type": "object",
+      "properties": {
+        "agent_groups": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Target agent group names"
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["windows", "linux", "darwin", "chrome"]
+          }
+        },
+        "tags": {
+          "type": "object",
+          "additionalProperties": {"type": "string"},
+          "description": "Custom tags for agent filtering"
+        },
+        "exclude_paws": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Agent PAWs to explicitly exclude"
+        }
+      }
+    },
+    "adversary": {
+      "type": "object",
+      "required": ["adversary_id"],
+      "properties": {
+        "adversary_id": {
+          "type": "string",
+          "description": "Caldera adversary profile UUID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Adversary profile name"
+        },
+        "atomic_ordering": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Specific ability IDs in execution order (overrides planner)"
+        },
+        "planner": {
+          "type": "string",
+          "default": "atomic",
+          "description": "Planner to use for operation"
+        },
+        "source": {
+          "type": "string",
+          "description": "Fact source UUID"
+        },
+        "obfuscator": {
+          "type": "string",
+          "description": "Obfuscator name"
+        }
+      }
+    },
+    "siem": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "type": {
+          "type": "string",
+          "enum": ["elastic", "splunk", "sentinel", "chronicle", "custom"]
+        },
+        "endpoint": {
+          "type": "string",
+          "format": "uri",
+          "description": "SIEM ingestion endpoint URL"
+        },
+        "api_key": {
+          "type": "string",
+          "description": "SIEM API authentication key"
+        },
+        "index_name": {
+          "type": "string",
+          "description": "Target index/sourcetype for events"
+        },
+        "tags": {
+          "type": "object",
+          "additionalProperties": {"type": "string"},
+          "description": "Additional tags to apply to SIEM events"
+        },
+        "dashboard_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "SIEM dashboard URL for this campaign"
+        }
+      }
+    },
+    "notifications": {
+      "type": "object",
+      "properties": {
+        "slack": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean", "default": false},
+            "webhook_url": {"type": "string", "format": "uri"},
+            "channel": {"type": "string"},
+            "mentions": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Slack user IDs or group handles to notify"
+            }
+          }
+        },
+        "n8n": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean", "default": false},
+            "webhook_url": {"type": "string", "format": "uri"},
+            "workflow_id": {"type": "string"}
+          }
+        },
+        "email": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean", "default": false},
+            "recipients": {
+              "type": "array",
+              "items": {"type": "string", "format": "email"}
+            },
+            "smtp_server": {"type": "string"}
+          }
+        },
+        "webhook": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean", "default": false},
+            "url": {"type": "string", "format": "uri"},
+            "method": {"type": "string", "enum": ["POST", "PUT"], "default": "POST"},
+            "headers": {
+              "type": "object",
+              "additionalProperties": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "governance": {
+      "type": "object",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "Campaign owner/responsible party"
+        },
+        "ticket_id": {
+          "type": "string",
+          "description": "Associated ticket/change request ID"
+        },
+        "approval_status": {
+          "type": "string",
+          "enum": ["pending", "approved", "rejected", "completed"],
+          "default": "pending"
+        },
+        "approved_by": {
+          "type": "string",
+          "description": "Approver name or ID"
+        },
+        "scheduled_start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Scheduled start time (ISO 8601)"
+        },
+        "scheduled_end": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Scheduled end time (ISO 8601)"
+        },
+        "max_duration_hours": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 72,
+          "description": "Maximum allowed duration in hours"
+        },
+        "requires_human_approval": {
+          "type": "boolean",
+          "default": false,
+          "description": "Require manual approval before each operation"
+        }
+      }
+    },
+    "state": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "created",
+            "infrastructure_provisioning",
+            "infrastructure_ready",
+            "agents_enrolling",
+            "agents_ready",
+            "operation_queued",
+            "operation_running",
+            "operation_paused",
+            "operation_completed",
+            "siem_tagging",
+            "reporting",
+            "pdf_ready",
+            "completed",
+            "failed",
+            "cancelled"
+          ],
+          "default": "created"
+        },
+        "current_phase": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9,
+          "description": "Current execution phase (1-9)"
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "operation_id": {"type": "string"},
+              "name": {"type": "string"},
+              "status": {"type": "string"},
+              "start_time": {"type": "string", "format": "date-time"},
+              "finish_time": {"type": "string", "format": "date-time"},
+              "links_completed": {"type": "integer"},
+              "links_failed": {"type": "integer"},
+              "report_path": {"type": "string"}
+            }
+          }
+        },
+        "agents_enrolled": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "paw": {"type": "string"},
+              "hostname": {"type": "string"},
+              "platform": {"type": "string"},
+              "enrolled_at": {"type": "string", "format": "date-time"}
+            }
+          }
+        },
+        "reports": {
+          "type": "object",
+          "properties": {
+            "json_path": {"type": "string"},
+            "pdf_path": {"type": "string"},
+            "csv_path": {"type": "string"},
+            "generated_at": {"type": "string", "format": "date-time"}
+          }
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "timestamp": {"type": "string", "format": "date-time"},
+              "phase": {"type": "string"},
+              "message": {"type": "string"},
+              "severity": {
+                "type": "string",
+                "enum": ["warning", "error", "critical"]
+              }
+            }
+          }
+        },
+        "timeline": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "timestamp": {"type": "string", "format": "date-time"},
+              "event": {"type": "string"},
+              "details": {"type": "object"}
+            }
+          }
+        }
+      }
+    },
+    "reporting": {
+      "type": "object",
+      "properties": {
+        "formats": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["json", "pdf", "csv", "html"]
+          },
+          "default": ["json", "pdf"]
+        },
+        "include_output": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include command output in reports"
+        },
+        "include_facts": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include discovered facts in reports"
+        },
+        "attack_navigator": {
+          "type": "boolean",
+          "default": true,
+          "description": "Generate ATT&CK Navigator layer"
+        },
+        "output_directory": {
+          "type": "string",
+          "description": "Custom output directory for reports"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created_by": {
+          "type": "string",
+          "description": "User or system that created the campaign"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Campaign spec version (semantic versioning)"
+        },
+        "tags": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Arbitrary tags for categorization"
+        },
+        "custom_fields": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Organization-specific custom fields"
+        }
+      }
+    }
+  }
+}

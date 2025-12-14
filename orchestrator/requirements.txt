@@ -1,0 +1,34 @@
+# Caldera Orchestrator Requirements
+# Additional dependencies for campaign orchestration
+
+# Already in Caldera requirements.txt:
+# - aiohttp
+# - PyYAML
+
+# Additional orchestrator dependencies
+rich>=13.0.0              # Rich terminal output and progress bars
+jsonschema>=4.17.0        # JSON schema validation
+jinja2>=3.1.0            # Template rendering for reports (already in Caldera)
+python-dateutil>=2.8.0   # Date/time utilities
+requests>=2.31.0         # Synchronous HTTP (for some integrations)
+
+# Optional SIEM integrations
+elasticsearch>=8.0.0     # Elastic SIEM integration
+splunk-sdk>=1.7.0       # Splunk SIEM integration
+
+# Optional report generation
+weasyprint>=59.0         # PDF generation from HTML
+reportlab>=4.0.0        # Alternative PDF generation
+matplotlib>=3.7.0       # Charts and visualizations
+
+# Optional notification integrations
+slack-sdk>=3.21.0       # Slack notifications
+python-telegram-bot>=20.0  # Telegram notifications
+
+# Development/testing
+pytest>=7.4.0           # Testing framework
+pytest-asyncio>=0.21.0  # Async testing support
+pytest-cov>=4.1.0       # Code coverage
+black>=23.0.0           # Code formatting
+pylint>=2.17.0          # Code linting
+mypy>=1.4.0            # Type checking

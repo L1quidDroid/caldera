@@ -1,0 +1,142 @@
+# Example Caldera Campaign Specification
+# This file demonstrates the structure for orchestrating multi-phase adversary emulation campaigns
+
+campaign_id: "550e8400-e29b-41d4-a716-446655440000"
+name: "Q4 2025 Purple Team Exercise - Financial Services"
+description: |
+  Comprehensive adversary emulation targeting financial services infrastructure
+  to validate detection capabilities against APT29-style techniques.
+  Focus on credential access, lateral movement, and data exfiltration.
+
+environment:
+  environment_id: "prod-finance-001"
+  type: "production"
+  caldera_url: "https://caldera.company.internal:8888"
+  api_key_red: "${CALDERA_API_KEY_RED}"  # Use environment variables for secrets
+  api_key_blue: "${CALDERA_API_KEY_BLUE}"
+  infrastructure:
+    caldera_host: "caldera-server-01.internal"
+    red_vms:
+      - "attacker-01.red.internal"
+      - "pivot-01.red.internal"
+    blue_vms:
+      - "dc01.corp.internal"
+      - "fileserver-01.corp.internal"
+      - "workstation-01.corp.internal"
+    network_cidr: "10.50.0.0/24"
+
+mode: "production"  # test | production | simulation | validation
+
+targets:
+  agent_groups:
+    - "finance_servers"
+    - "finance_workstations"
+  platforms:
+    - "windows"
+    - "linux"
+  tags:
+    department: "finance"
+    criticality: "high"
+    test_run_id: "Q4-2025-001"
+  exclude_paws:
+    - "critical-prod-db-01"  # Explicitly exclude critical systems
+
+adversary:
+  adversary_id: "de07f52d-9928-4071-9142-cb1d437b4502"
+  name: "APT29 Emulation - Financial Services"
+  planner: "atomic"
+  source: "ed32b9c3-9593-4c33-b0db-e2007315096b"  # Basic fact source
+  obfuscator: "base64jumble"
+
+siem:
+  enabled: true
+  type: "elastic"
+  endpoint: "https://elasticsearch.company.internal:9200"
+  api_key: "${ELASTIC_API_KEY}"
+  index_name: "caldera-purple-team"
+  tags:
+    source: "caldera"
+    caldera_test: "true"
+    campaign_id: "550e8400-e29b-41d4-a716-446655440000"
+    test_run_id: "Q4-2025-001"
+    environment: "production"
+  dashboard_url: "https://kibana.company.internal/app/dashboards#/view/campaign-dashboard"
+
+notifications:
+  slack:
+    enabled: true
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    channel: "#purple-team-ops"
+    mentions:
+      - "@security-team"
+      - "@incident-response"
+  
+  n8n:
+    enabled: true
+    webhook_url: "https://n8n.company.internal/webhook/caldera-campaign"
+    workflow_id: "campaign-orchestration-001"
+  
+  email:
+    enabled: true
+    recipients:
+      - "security-team@company.com"
+      - "purple-team@company.com"
+    smtp_server: "smtp.company.internal"
+  
+  webhook:
+    enabled: true
+    url: "https://automation.company.internal/webhooks/caldera/events"
+    method: "POST"
+    headers:
+      Authorization: "Bearer ${WEBHOOK_TOKEN}"
+      Content-Type: "application/json"
+
+governance:
+  owner: "purple-team-lead@company.com"
+  ticket_id: "SEC-2025-1234"
+  approval_status: "approved"
+  approved_by: "ciso@company.com"
+  scheduled_start: "2025-12-20T14:00:00Z"
+  scheduled_end: "2025-12-20T18:00:00Z"
+  max_duration_hours: 4
+  requires_human_approval: false
+
+state:
+  status: "created"
+  current_phase: 1
+  operations: []
+  agents_enrolled: []
+  reports: {}
+  errors: []
+  timeline:
+    - timestamp: "2025-12-14T10:00:00Z"
+      event: "campaign_created"
+      details:
+        created_by: "orchestrator-cli"
+        version: "1.0.0"
+
+reporting:
+  formats:
+    - "json"
+    - "pdf"
+    - "csv"
+  include_output: false  # Set to true for detailed forensics
+  include_facts: true
+  attack_navigator: true
+  output_directory: "/var/caldera/reports/campaigns"
+
+metadata:
+  created_at: "2025-12-14T10:00:00Z"
+  updated_at: "2025-12-14T10:00:00Z"
+  created_by: "orchestrator-cli"
+  version: "1.0.0"
+  tags:
+    - "apt29"
+    - "financial-services"
+    - "q4-2025"
+    - "credential-access"
+    - "lateral-movement"
+  custom_fields:
+    business_unit: "Corporate Security"
+    compliance_requirement: "PCI-DSS 12.9"
+    risk_level: "medium"
