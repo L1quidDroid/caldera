@@ -1,0 +1,93 @@
+# Triskele Labs Branding Configuration
+# This file controls the visual appearance of Caldera
+
+enabled: true
+theme: triskele_labs
+
+# Color Palette
+colors:
+  # Primary dark navy/blue-black for headers and backgrounds
+  primary_dark: "#020816"
+  
+  # Bright cyan/teal for CTAs, links, and highlights
+  primary_accent: "#00D1FF"
+  
+  # Secondary gradient colors for banners
+  secondary_accent_start: "#0A3D91"
+  secondary_accent_end: "#0BC4D9"
+  
+  # Light backgrounds and text
+  neutral_light: "#F5F7FA"
+  text_dark: "#1F2937"
+  text_mid: "#6B7280"
+
+# Typography
+typography:
+  font_family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+  h1_size: "48px"
+  h1_weight: "700"
+  h2_size: "32px"
+  h2_weight: "600"
+  h3_size: "22px"
+  h3_weight: "600"
+  body_size: "16px"
+  body_weight: "400"
+  small_size: "14px"
+
+# Logo and Favicon
+logo:
+  # Header logo (shown in navigation)
+  header_logo: "/plugin/branding/static/img/triskele_logo.svg"
+  header_logo_width: "180px"
+  header_logo_height: "auto"
+  
+  # Login page logo (larger version)
+  login_logo: "/plugin/branding/static/img/triskele_logo_large.svg"
+  login_logo_width: "240px"
+  
+  # Favicon
+  favicon: "/plugin/branding/static/img/favicon.ico"
+
+# Customization Text
+customization:
+  company_name: "Triskele Labs"
+  tagline: "Advanced Cybersecurity Services"
+  login_title: "Caldera Platform"
+  login_message: "Secure Access to Adversary Emulation Platform"
+  footer_text: "© 2025 Triskele Labs. All rights reserved."
+  
+  # Welcome message on dashboard
+  dashboard_welcome: "Welcome to Caldera"
+  dashboard_subtitle: "Adversary emulation platform powered by Triskele Labs"
+
+# Feature Toggles
+features:
+  show_company_logo: true
+  show_tagline: true
+  custom_login_page: true
+  custom_dashboard: true
+  custom_favicon: true
+  gradient_backgrounds: true
+  rounded_corners: true
+  card_shadows: true
+
+# Advanced Styling
+advanced:
+  # Spacing scale (in pixels)
+  spacing_xs: 8
+  spacing_sm: 16
+  spacing_md: 24
+  spacing_lg: 40
+  spacing_xl: 64
+  
+  # Border radius scale (in pixels)
+  radius_sm: 4
+  radius_md: 8
+  radius_lg: 12
+  radius_xl: 16
+  
+  # Shadow intensity (0-1)
+  shadow_intensity: 0.15
+  
+  # Animation speed (milliseconds)
+  transition_speed: 200

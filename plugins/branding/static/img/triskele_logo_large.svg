@@ -1,0 +1,39 @@
+# Placeholder large logo for Triskele Labs login page
+# Replace this with your actual SVG logo
+
+<svg width="240" height="80" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0A3D91;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00D1FF;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Triskele Symbol (Celtic triple spiral) - Larger -->
+  <g transform="translate(40, 40)">
+    <circle cx="0" cy="0" r="32" fill="none" stroke="url(#grad2)" stroke-width="3"/>
+    
+    <!-- Three spirals -->
+    <path d="M 0,-20 Q -7,-14 -14,-20 Q -21,-26 -26,-20" 
+          fill="none" stroke="url(#grad2)" stroke-width="3.5" 
+          transform="rotate(0 0 0)"/>
+    <path d="M 0,-20 Q -7,-14 -14,-20 Q -21,-26 -26,-20" 
+          fill="none" stroke="url(#grad2)" stroke-width="3.5" 
+          transform="rotate(120 0 0)"/>
+    <path d="M 0,-20 Q -7,-14 -14,-20 Q -21,-26 -26,-20" 
+          fill="none" stroke="url(#grad2)" stroke-width="3.5" 
+          transform="rotate(240 0 0)"/>
+    
+    <circle cx="0" cy="0" r="4" fill="url(#grad2)"/>
+  </g>
+  
+  <!-- Text - Larger -->
+  <text x="90" y="45" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+        font-size="28" font-weight="700" fill="#020816">
+    TRISKELE
+  </text>
+  <text x="90" y="65" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+        font-size="14" font-weight="500" fill="#00D1FF">
+    LABS
+  </text>
+</svg>

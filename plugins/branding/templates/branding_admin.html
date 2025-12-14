@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Branding Admin | Caldera</title>
+    
+    <!-- Triskele Labs Theme -->
+    <link rel="stylesheet" href="/plugin/branding/static/css/triskele_theme.css">
+    <link href="/gui/css/lib/fa-all.min.css" rel="stylesheet">
+    
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .config-section {
+            margin-bottom: 40px;
+        }
+        
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-top: 16px;
+        }
+        
+        .color-input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .color-preview {
+            width: 60px;
+            height: 40px;
+            border-radius: 8px;
+            border: 2px solid #E5E7EB;
+        }
+        
+        .preview-section {
+            background: #F5F7FA;
+            padding: 32px;
+            border-radius: 12px;
+            margin-top: 24px;
+        }
+        
+        .preview-card {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        
+        .status-message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+            display: none;
+        }
+        
+        .status-message.success {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid #10B981;
+            color: #065F46;
+        }
+        
+        .status-message.error {
+            background: rgba(220, 38, 38, 0.1);
+            border-left: 4px solid #DC2626;
+            color: #991B1B;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1><i class="fas fa-palette"></i> Branding Configuration</h1>
+        <p>Customize Caldera's appearance with Triskele Labs branding</p>
+    </div>
+    
+    <div class="admin-container">
+        <!-- Color Configuration -->
+        <div class="card config-section">
+            <div class="card-header">
+                <i class="fas fa-palette"></i> Color Palette
+            </div>
+            <div class="card-body">
+                <div class="config-grid">
+                    <div>
+                        <label>Primary Dark (Navy)</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="primary_dark" value="#020816" class="color-preview">
+                            <input type="text" id="primary_dark_text" value="#020816" style="flex: 1;">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label>Primary Accent (Cyan/Teal)</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="primary_accent" value="#00D1FF" class="color-preview">
+                            <input type="text" id="primary_accent_text" value="#00D1FF" style="flex: 1;">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label>Secondary Start (Blue)</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="secondary_start" value="#0A3D91" class="color-preview">
+                            <input type="text" id="secondary_start_text" value="#0A3D91" style="flex: 1;">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label>Secondary End (Teal)</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="secondary_end" value="#0BC4D9" class="color-preview">
+                            <input type="text" id="secondary_end_text" value="#0BC4D9" style="flex: 1;">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label>Neutral Light (Background)</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="neutral_light" value="#F5F7FA" class="color-preview">
+                            <input type="text" id="neutral_light_text" value="#F5F7FA" style="flex: 1;">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label>Text Dark</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="text_dark" value="#1F2937" class="color-preview">
+                            <input type="text" id="text_dark_text" value="#1F2937" style="flex: 1;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Typography Configuration -->
+        <div class="card config-section">
+            <div class="card-header">
+                <i class="fas fa-font"></i> Typography
+            </div>
+            <div class="card-body">
+                <div class="config-grid">
+                    <div>
+                        <label>H1 Size</label>
+                        <input type="text" id="h1_size" value="48px">
+                    </div>
+                    
+                    <div>
+                        <label>H2 Size</label>
+                        <input type="text" id="h2_size" value="32px">
+                    </div>
+                    
+                    <div>
+                        <label>H3 Size</label>
+                        <input type="text" id="h3_size" value="22px">
+                    </div>
+                    
+                    <div>
+                        <label>Body Size</label>
+                        <input type="text" id="body_size" value="16px">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Customization Text -->
+        <div class="card config-section">
+            <div class="card-header">
+                <i class="fas fa-edit"></i> Customization Text
+            </div>
+            <div class="card-body">
+                <div class="config-grid">
+                    <div>
+                        <label>Company Name</label>
+                        <input type="text" id="company_name" value="Triskele Labs">
+                    </div>
+                    
+                    <div>
+                        <label>Tagline</label>
+                        <input type="text" id="tagline" value="Advanced Cybersecurity Services">
+                    </div>
+                    
+                    <div>
+                        <label>Login Title</label>
+                        <input type="text" id="login_title" value="Caldera Platform">
+                    </div>
+                    
+                    <div>
+                        <label>Login Message</label>
+                        <input type="text" id="login_message" value="Secure Access to Adversary Emulation Platform">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Preview Section -->
+        <div class="card config-section">
+            <div class="card-header">
+                <i class="fas fa-eye"></i> Live Preview
+            </div>
+            <div class="card-body">
+                <div class="preview-section" id="preview">
+                    <div class="preview-card">
+                        <h1>Heading 1 Preview</h1>
+                        <h2>Heading 2 Preview</h2>
+                        <h3>Heading 3 Preview</h3>
+                        <p>Body text preview with regular paragraph styling.</p>
+                        <button>Primary Button</button>
+                        <button class="secondary">Secondary Button</button>
+                        <div style="margin-top: 16px;">
+                            <span class="badge-info">Info Badge</span>
+                            <span class="badge-success">Success Badge</span>
+                            <span class="badge-warning">Warning Badge</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button onclick="saveConfig()" style="flex: 1;">
+                <i class="fas fa-save"></i> Save Configuration
+            </button>
+            <button class="secondary" onclick="resetToDefault()">
+                <i class="fas fa-undo"></i> Reset to Default
+            </button>
+            <button class="secondary" onclick="loadConfig()">
+                <i class="fas fa-sync"></i> Reload
+            </button>
+        </div>
+        
+        <div id="status" class="status-message"></div>
+    </div>
+    
+    <script>
+        // Sync color pickers with text inputs
+        document.querySelectorAll('input[type="color"]').forEach(input => {
+            const textInput = document.getElementById(input.id + '_text');
+            
+            input.addEventListener('input', (e) => {
+                textInput.value = e.target.value;
+                updatePreview();
+            });
+            
+            textInput.addEventListener('input', (e) => {
+                input.value = e.target.value;
+                updatePreview();
+            });
+        });
+        
+        // Update preview in real-time
+        function updatePreview() {
+            const preview = document.getElementById('preview');
+            const root = document.documentElement;
+            
+            // Update CSS variables
+            root.style.setProperty('--triskele-primary-dark', document.getElementById('primary_dark').value);
+            root.style.setProperty('--triskele-primary-accent', document.getElementById('primary_accent').value);
+            root.style.setProperty('--triskele-secondary-start', document.getElementById('secondary_start').value);
+            root.style.setProperty('--triskele-secondary-end', document.getElementById('secondary_end').value);
+            root.style.setProperty('--triskele-neutral-light', document.getElementById('neutral_light').value);
+            root.style.setProperty('--triskele-text-dark', document.getElementById('text_dark').value);
+            
+            root.style.setProperty('--triskele-h1-size', document.getElementById('h1_size').value);
+            root.style.setProperty('--triskele-h2-size', document.getElementById('h2_size').value);
+            root.style.setProperty('--triskele-h3-size', document.getElementById('h3_size').value);
+            root.style.setProperty('--triskele-body-size', document.getElementById('body_size').value);
+        }
+        
+        // Save configuration
+        async function saveConfig() {
+            const config = {
+                colors: {
+                    primary_dark: document.getElementById('primary_dark').value,
+                    primary_accent: document.getElementById('primary_accent').value,
+                    secondary_accent_start: document.getElementById('secondary_start').value,
+                    secondary_accent_end: document.getElementById('secondary_end').value,
+                    neutral_light: document.getElementById('neutral_light').value,
+                    text_dark: document.getElementById('text_dark').value
+                },
+                typography: {
+                    h1_size: document.getElementById('h1_size').value,
+                    h2_size: document.getElementById('h2_size').value,
+                    h3_size: document.getElementById('h3_size').value,
+                    body_size: document.getElementById('body_size').value
+                },
+                customization: {
+                    company_name: document.getElementById('company_name').value,
+                    tagline: document.getElementById('tagline').value,
+                    login_title: document.getElementById('login_title').value,
+                    login_message: document.getElementById('login_message').value
+                }
+            };
+            
+            try {
+                const response = await fetch('/plugin/branding/api/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(config)
+                });
+                
+                const result = await response.json();
+                showStatus('Configuration saved successfully!', 'success');
+            } catch (error) {
+                showStatus('Error saving configuration: ' + error.message, 'error');
+            }
+        }
+        
+        // Load configuration
+        async function loadConfig() {
+            try {
+                const response = await fetch('/plugin/branding/api/config');
+                const config = await response.json();
+                
+                // Populate form
+                if (config.colors) {
+                    Object.keys(config.colors).forEach(key => {
+                        const input = document.getElementById(key);
+                        if (input) input.value = config.colors[key];
+                    });
+                }
+                
+                if (config.typography) {
+                    Object.keys(config.typography).forEach(key => {
+                        const input = document.getElementById(key);
+                        if (input) input.value = config.typography[key];
+                    });
+                }
+                
+                if (config.customization) {
+                    Object.keys(config.customization).forEach(key => {
+                        const input = document.getElementById(key);
+                        if (input) input.value = config.customization[key];
+                    });
+                }
+                
+                updatePreview();
+                showStatus('Configuration loaded successfully!', 'success');
+            } catch (error) {
+                showStatus('Error loading configuration: ' + error.message, 'error');
+            }
+        }
+        
+        // Reset to default
+        function resetToDefault() {
+            if (confirm('Reset all branding to Triskele Labs defaults?')) {
+                document.getElementById('primary_dark').value = '#020816';
+                document.getElementById('primary_accent').value = '#00D1FF';
+                document.getElementById('secondary_start').value = '#0A3D91';
+                document.getElementById('secondary_end').value = '#0BC4D9';
+                document.getElementById('neutral_light').value = '#F5F7FA';
+                document.getElementById('text_dark').value = '#1F2937';
+                
+                document.getElementById('h1_size').value = '48px';
+                document.getElementById('h2_size').value = '32px';
+                document.getElementById('h3_size').value = '22px';
+                document.getElementById('body_size').value = '16px';
+                
+                document.getElementById('company_name').value = 'Triskele Labs';
+                document.getElementById('tagline').value = 'Advanced Cybersecurity Services';
+                document.getElementById('login_title').value = 'Caldera Platform';
+                document.getElementById('login_message').value = 'Secure Access to Adversary Emulation Platform';
+                
+                updatePreview();
+                showStatus('Reset to default values', 'success');
+            }
+        }
+        
+        // Show status message
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status-message ' + type;
+            status.style.display = 'block';
+            
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Load config on page load
+        window.addEventListener('load', loadConfig);
+    </script>
+</body>
+</html>

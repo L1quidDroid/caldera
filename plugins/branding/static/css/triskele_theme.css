@@ -1,0 +1,474 @@
+/*
+ * Triskele Labs Theme for Caldera
+ * Custom branding with clean, security-focused corporate style
+ * 
+ * Color Palette:
+ * - Primary Dark: #020816 (deep navy/blue-black)
+ * - Primary Accent: #00D1FF (bright cyan/teal)
+ * - Secondary Accent: #0A3D91 → #0BC4D9 (gradient)
+ * - Neutral Light: #F5F7FA (off-white background)
+ * - Text: #1F2937 (dark), #6B7280 (mid-grey)
+ */
+
+:root {
+    /* Color Variables */
+    --triskele-primary-dark: #020816;
+    --triskele-primary-accent: #00D1FF;
+    --triskele-secondary-start: #0A3D91;
+    --triskele-secondary-end: #0BC4D9;
+    --triskele-neutral-light: #F5F7FA;
+    --triskele-text-dark: #1F2937;
+    --triskele-text-mid: #6B7280;
+    --triskele-white: #FFFFFF;
+    
+    /* Typography */
+    --triskele-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --triskele-h1-size: 48px;
+    --triskele-h2-size: 32px;
+    --triskele-h3-size: 22px;
+    --triskele-body-size: 16px;
+    --triskele-small-size: 14px;
+    
+    /* Spacing */
+    --triskele-spacing-xs: 8px;
+    --triskele-spacing-sm: 16px;
+    --triskele-spacing-md: 24px;
+    --triskele-spacing-lg: 40px;
+    --triskele-spacing-xl: 64px;
+    
+    /* Border Radius */
+    --triskele-radius-sm: 4px;
+    --triskele-radius-md: 8px;
+    --triskele-radius-lg: 12px;
+    --triskele-radius-xl: 16px;
+}
+
+/* =====================================================
+   Global Styles & Typography
+   ===================================================== */
+
+body {
+    font-family: var(--triskele-font-family);
+    font-size: var(--triskele-body-size);
+    line-height: 1.6;
+    color: var(--triskele-text-dark);
+    background-color: var(--triskele-neutral-light);
+    margin: 0;
+    padding: 0;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--triskele-font-family);
+    font-weight: 600;
+    line-height: 1.2;
+    margin-top: 0;
+    color: var(--triskele-primary-dark);
+}
+
+h1 {
+    font-size: var(--triskele-h1-size);
+    font-weight: 700;
+}
+
+h2 {
+    font-size: var(--triskele-h2-size);
+    font-weight: 600;
+}
+
+h3 {
+    font-size: var(--triskele-h3-size);
+    font-weight: 600;
+}
+
+/* Links */
+a {
+    color: var(--triskele-primary-accent);
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+}
+
+a:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
+/* =====================================================
+   Navigation & Header
+   ===================================================== */
+
+#navbar, #topbar, .navbar, header {
+    background: var(--triskele-primary-dark) !important;
+    color: var(--triskele-white) !important;
+    border-bottom: 2px solid var(--triskele-primary-accent);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+#navbar a, #topbar a, .navbar a, header a {
+    color: var(--triskele-white) !important;
+    font-weight: 500;
+    padding: 12px 20px;
+    transition: background-color 0.2s ease;
+}
+
+#navbar a:hover, #topbar a:hover, .navbar a:hover, header a:hover {
+    background-color: rgba(0, 209, 255, 0.1);
+    text-decoration: none;
+}
+
+#navbar .active, #topbar .active, .navbar .active {
+    background-color: var(--triskele-primary-accent);
+    color: var(--triskele-primary-dark) !important;
+    font-weight: 600;
+}
+
+/* Logo */
+.logo, .brand {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--triskele-primary-accent) !important;
+    padding: 12px 20px;
+}
+
+/* =====================================================
+   Buttons & CTAs
+   ===================================================== */
+
+button, .btn, input[type="submit"], input[type="button"] {
+    font-family: var(--triskele-font-family);
+    font-size: var(--triskele-body-size);
+    font-weight: 600;
+    padding: 12px 24px;
+    border: none;
+    border-radius: var(--triskele-radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--triskele-primary-accent);
+    color: var(--triskele-white);
+}
+
+button:hover, .btn:hover, input[type="submit"]:hover {
+    background: #11BFEA;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 209, 255, 0.3);
+}
+
+button:active, .btn:active {
+    transform: translateY(0);
+}
+
+/* Secondary/Outline Buttons */
+button.secondary, .btn-secondary, .btn-outline {
+    background: transparent;
+    border: 2px solid var(--triskele-primary-accent);
+    color: var(--triskele-primary-accent);
+}
+
+button.secondary:hover, .btn-secondary:hover, .btn-outline:hover {
+    background: var(--triskele-primary-accent);
+    color: var(--triskele-white);
+}
+
+/* Danger Buttons */
+button.danger, .btn-danger {
+    background: #DC2626;
+}
+
+button.danger:hover, .btn-danger:hover {
+    background: #B91C1C;
+}
+
+/* =====================================================
+   Cards & Panels
+   ===================================================== */
+
+.card, .panel, .section, .block {
+    background: var(--triskele-white);
+    border-radius: var(--triskele-radius-lg);
+    padding: var(--triskele-spacing-md);
+    margin-bottom: var(--triskele-spacing-md);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.2s ease;
+}
+
+.card:hover, .panel:hover {
+    box-shadow: 0 4px 16px rgba(0, 209, 255, 0.15);
+}
+
+.card-header, .panel-header {
+    background: linear-gradient(135deg, var(--triskele-secondary-start) 0%, var(--triskele-secondary-end) 100%);
+    color: var(--triskele-white);
+    padding: var(--triskele-spacing-sm);
+    margin: calc(-1 * var(--triskele-spacing-md)) calc(-1 * var(--triskele-spacing-md)) var(--triskele-spacing-sm);
+    border-radius: var(--triskele-radius-lg) var(--triskele-radius-lg) 0 0;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.card-body, .panel-body {
+    padding: var(--triskele-spacing-sm) 0;
+}
+
+/* =====================================================
+   Forms & Inputs
+   ===================================================== */
+
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+input[type="search"],
+textarea,
+select {
+    font-family: var(--triskele-font-family);
+    font-size: var(--triskele-body-size);
+    padding: 12px 16px;
+    border: 2px solid #E5E7EB;
+    border-radius: var(--triskele-radius-md);
+    background: var(--triskele-white);
+    color: var(--triskele-text-dark);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--triskele-primary-accent);
+    box-shadow: 0 0 0 3px rgba(0, 209, 255, 0.1);
+}
+
+label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: var(--triskele-spacing-xs);
+    color: var(--triskele-text-dark);
+}
+
+/* =====================================================
+   Tables
+   ===================================================== */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--triskele-white);
+    border-radius: var(--triskele-radius-md);
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+thead {
+    background: var(--triskele-primary-dark);
+    color: var(--triskele-white);
+}
+
+th {
+    padding: 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: var(--triskele-body-size);
+}
+
+td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+tr:hover {
+    background: rgba(0, 209, 255, 0.05);
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+/* =====================================================
+   Login Page
+   ===================================================== */
+
+.login-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--triskele-primary-dark) 0%, var(--triskele-secondary-start) 100%);
+}
+
+.login-card {
+    background: var(--triskele-white);
+    padding: var(--triskele-spacing-lg);
+    border-radius: var(--triskele-radius-xl);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    width: 100%;
+}
+
+.login-logo {
+    text-align: center;
+    margin-bottom: var(--triskele-spacing-md);
+}
+
+.login-logo img {
+    max-width: 200px;
+    height: auto;
+}
+
+.login-title {
+    font-size: var(--triskele-h2-size);
+    font-weight: 700;
+    text-align: center;
+    color: var(--triskele-primary-dark);
+    margin-bottom: var(--triskele-spacing-xs);
+}
+
+.login-subtitle {
+    text-align: center;
+    color: var(--triskele-text-mid);
+    margin-bottom: var(--triskele-spacing-md);
+    font-size: var(--triskele-small-size);
+}
+
+/* =====================================================
+   Dashboard & Hero Sections
+   ===================================================== */
+
+.hero, .dashboard-header {
+    background: linear-gradient(135deg, var(--triskele-primary-dark) 0%, var(--triskele-secondary-start) 40%, var(--triskele-secondary-end) 100%);
+    color: var(--triskele-white);
+    padding: var(--triskele-spacing-xl) var(--triskele-spacing-md);
+    border-radius: var(--triskele-radius-lg);
+    margin-bottom: var(--triskele-spacing-lg);
+}
+
+.hero h1, .dashboard-header h1 {
+    color: var(--triskele-white);
+    margin-bottom: var(--triskele-spacing-sm);
+}
+
+.hero p, .dashboard-header p {
+    font-size: 18px;
+    opacity: 0.9;
+}
+
+/* =====================================================
+   Badges & Status Indicators
+   ===================================================== */
+
+.badge, .status, .tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: var(--triskele-radius-sm);
+    font-size: var(--triskele-small-size);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-success, .status-success {
+    background: #10B981;
+    color: var(--triskele-white);
+}
+
+.badge-warning, .status-warning {
+    background: #F59E0B;
+    color: var(--triskele-white);
+}
+
+.badge-danger, .status-danger {
+    background: #DC2626;
+    color: var(--triskele-white);
+}
+
+.badge-info, .status-info {
+    background: var(--triskele-primary-accent);
+    color: var(--triskele-primary-dark);
+}
+
+/* =====================================================
+   Alerts & Notifications
+   ===================================================== */
+
+.alert {
+    padding: var(--triskele-spacing-sm);
+    border-radius: var(--triskele-radius-md);
+    margin-bottom: var(--triskele-spacing-md);
+    border-left: 4px solid;
+}
+
+.alert-info {
+    background: rgba(0, 209, 255, 0.1);
+    border-left-color: var(--triskele-primary-accent);
+    color: var(--triskele-text-dark);
+}
+
+.alert-success {
+    background: rgba(16, 185, 129, 0.1);
+    border-left-color: #10B981;
+    color: var(--triskele-text-dark);
+}
+
+.alert-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border-left-color: #F59E0B;
+    color: var(--triskele-text-dark);
+}
+
+.alert-danger {
+    background: rgba(220, 38, 38, 0.1);
+    border-left-color: #DC2626;
+    color: var(--triskele-text-dark);
+}
+
+/* =====================================================
+   Utilities
+   ===================================================== */
+
+.text-center {
+    text-align: center;
+}
+
+.text-accent {
+    color: var(--triskele-primary-accent);
+}
+
+.bg-dark {
+    background: var(--triskele-primary-dark);
+    color: var(--triskele-white);
+}
+
+.gradient-bg {
+    background: linear-gradient(135deg, var(--triskele-secondary-start) 0%, var(--triskele-secondary-end) 100%);
+}
+
+.shadow {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.rounded {
+    border-radius: var(--triskele-radius-md);
+}
+
+/* =====================================================
+   Responsive Design
+   ===================================================== */
+
+@media (max-width: 768px) {
+    :root {
+        --triskele-h1-size: 32px;
+        --triskele-h2-size: 24px;
+        --triskele-h3-size: 18px;
+        --triskele-body-size: 14px;
+    }
+    
+    .hero, .dashboard-header {
+        padding: var(--triskele-spacing-md);
+    }
+    
+    .card, .panel {
+        padding: var(--triskele-spacing-sm);
+    }
+}
