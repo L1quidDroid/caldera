@@ -9,12 +9,12 @@ colors:
   # Primary dark navy/blue-black for headers and backgrounds
   primary_dark: "#020816"
   
-  # Bright cyan/teal for CTAs, links, and highlights
-  primary_accent: "#00D1FF"
+  # Triskele Labs green for CTAs, links, and highlights
+  primary_accent: "#48CFA0"
   
-  # Secondary gradient colors for banners
-  secondary_accent_start: "#0A3D91"
-  secondary_accent_end: "#0BC4D9"
+  # Secondary gradient colors for banners (green shades)
+  secondary_accent_start: "#40BB90"
+  secondary_accent_end: "#48CFA0"
   
   # Light backgrounds and text
   neutral_light: "#F5F7FA"

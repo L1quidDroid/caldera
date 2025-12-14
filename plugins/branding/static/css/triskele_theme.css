@@ -4,8 +4,7 @@
  * 
  * Color Palette:
  * - Primary Dark: #020816 (deep navy/blue-black)
- * - Primary Accent: #00D1FF (bright cyan/teal)
- * - Secondary Accent: #0A3D91 → #0BC4D9 (gradient)
+ * - Primary Accent: #48CFA0 (Triskele Labs green)
  * - Neutral Light: #F5F7FA (off-white background)
  * - Text: #1F2937 (dark), #6B7280 (mid-grey)
  */
@@ -13,9 +12,7 @@
 :root {
     /* Color Variables */
     --triskele-primary-dark: #020816;
-    --triskele-primary-accent: #00D1FF;
-    --triskele-secondary-start: #0A3D91;
-    --triskele-secondary-end: #0BC4D9;
+    --triskele-primary-accent: #48CFA0;
     --triskele-neutral-light: #F5F7FA;
     --triskele-text-dark: #1F2937;
     --triskele-text-mid: #6B7280;
@@ -148,9 +145,9 @@ button, .btn, input[type="submit"], input[type="button"] {
 }
 
 button:hover, .btn:hover, input[type="submit"]:hover {
-    background: #11BFEA;
+    background: #40BB90;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 209, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(72, 207, 160, 0.3);
 }
 
 button:active, .btn:active {
@@ -193,11 +190,11 @@ button.danger:hover, .btn-danger:hover {
 }
 
 .card:hover, .panel:hover {
-    box-shadow: 0 4px 16px rgba(0, 209, 255, 0.15);
+    box-shadow: 0 4px 16px rgba(72, 207, 160, 0.15);
 }
 
 .card-header, .panel-header {
-    background: linear-gradient(135deg, var(--triskele-secondary-start) 0%, var(--triskele-secondary-end) 100%);
+    background: var(--triskele-primary-accent);
     color: var(--triskele-white);
     padding: var(--triskele-spacing-sm);
     margin: calc(-1 * var(--triskele-spacing-md)) calc(-1 * var(--triskele-spacing-md)) var(--triskele-spacing-sm);
@@ -238,7 +235,7 @@ textarea:focus,
 select:focus {
     outline: none;
     border-color: var(--triskele-primary-accent);
-    box-shadow: 0 0 0 3px rgba(0, 209, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(72, 207, 160, 0.1);
 }
 
 label {
@@ -279,7 +276,7 @@ td {
 }
 
 tr:hover {
-    background: rgba(0, 209, 255, 0.05);
+    background: rgba(72, 207, 160, 0.05);
 }
 
 tr:last-child td {
@@ -295,7 +292,7 @@ tr:last-child td {
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    background: linear-gradient(135deg, var(--triskele-primary-dark) 0%, var(--triskele-secondary-start) 100%);
+    background: var(--triskele-primary-dark);
 }
 
 .login-card {
@@ -337,11 +334,12 @@ tr:last-child td {
    ===================================================== */
 
 .hero, .dashboard-header {
-    background: linear-gradient(135deg, var(--triskele-primary-dark) 0%, var(--triskele-secondary-start) 40%, var(--triskele-secondary-end) 100%);
+    background: var(--triskele-primary-dark);
     color: var(--triskele-white);
     padding: var(--triskele-spacing-xl) var(--triskele-spacing-md);
     border-radius: var(--triskele-radius-lg);
     margin-bottom: var(--triskele-spacing-lg);
+    border-bottom: 3px solid var(--triskele-primary-accent);
 }
 
 .hero h1, .dashboard-header h1 {
@@ -385,7 +383,7 @@ tr:last-child td {
 
 .badge-info, .status-info {
     background: var(--triskele-primary-accent);
-    color: var(--triskele-primary-dark);
+    color: var(--triskele-white);
 }
 
 /* =====================================================
@@ -400,7 +398,7 @@ tr:last-child td {
 }
 
 .alert-info {
-    background: rgba(0, 209, 255, 0.1);
+    background: rgba(72, 207, 160, 0.1);
     border-left-color: var(--triskele-primary-accent);
     color: var(--triskele-text-dark);
 }
@@ -441,7 +439,7 @@ tr:last-child td {
 }
 
 .gradient-bg {
-    background: linear-gradient(135deg, var(--triskele-secondary-start) 0%, var(--triskele-secondary-end) 100%);
+    background: var(--triskele-primary-accent);
 }
 
 .shadow {
