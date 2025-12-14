@@ -12,6 +12,7 @@ from importlib import import_module
 
 from app.objects.c_ability import Ability
 from app.objects.c_adversary import Adversary
+from app.objects.c_campaign import Campaign
 from app.objects.c_objective import Objective
 from app.objects.c_planner import Planner
 from app.objects.c_plugin import Plugin
@@ -29,6 +30,7 @@ DATA_BACKUP_DIR = "data/backup"
 DATA_FILE_GLOBS = (
     'data/abilities/*',
     'data/adversaries/*',
+    'data/campaigns/*',
     'data/facts/*',
     'data/objectives/*',
     'data/payloads/*',
@@ -49,7 +51,7 @@ class DataService(DataServiceInterface, BaseService):
     def __init__(self):
         self.log = self.add_service('data_svc', self)
         self.schema = dict(agents=[], planners=[], adversaries=[], abilities=[], sources=[], operations=[],
-                           schedules=[], plugins=[], obfuscators=[], objectives=[], data_encoders=[])
+                           schedules=[], plugins=[], obfuscators=[], objectives=[], data_encoders=[], campaigns=[])
         self.ram = copy.deepcopy(self.schema)
 
     @staticmethod
