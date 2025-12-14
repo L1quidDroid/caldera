@@ -33,7 +33,7 @@ async def enable(services):
     if str(orchestrator_path) not in sys.path:
         sys.path.insert(0, str(orchestrator_path))
     
-    from webhook_publisher import WebhookPublisher, SIEMIntegration
+    from services.webhook_service import WebhookPublisher, SIEMIntegration
     
     # Initialize webhook publisher
     webhook_publisher = WebhookPublisher()

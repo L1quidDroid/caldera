@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Triskele Labs Branding Preview - Caldera</title>
+    
+    <!-- Load the Triskele Labs theme CSS -->
+    <link rel="stylesheet" href="plugins/branding/static/css/triskele_theme.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Additional preview styles */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .section {
+            margin-bottom: 60px;
+        }
+        
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-top: 24px;
+        }
+        
+        .code-block {
+            background: #1F2937;
+            color: #F5F7FA;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <div class="hero">
+        <h1><i class="fas fa-palette"></i> Triskele Labs Branding Preview</h1>
+        <p>This is a preview of the custom Caldera theme with Triskele Labs branding</p>
+    </div>
+    
+    <div class="container">
+        <!-- Colors Section -->
+        <div class="section">
+            <h2><i class="fas fa-swatchbook"></i> Color Palette</h2>
+            <div class="demo-grid">
+                <div class="card">
+                    <div style="background: #020816; height: 80px; border-radius: 8px 8px 0 0;"></div>
+                    <div style="padding: 16px;">
+                        <h3>Primary Dark</h3>
+                        <code>#020816</code>
+                        <p style="margin-top: 8px; color: #6B7280; font-size: 14px;">Headers, navigation, dark sections</p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div style="background: #00D1FF; height: 80px; border-radius: 8px 8px 0 0;"></div>
+                    <div style="padding: 16px;">
+                        <h3>Primary Accent</h3>
+                        <code>#00D1FF</code>
+                        <p style="margin-top: 8px; color: #6B7280; font-size: 14px;">CTAs, links, highlights</p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div style="background: linear-gradient(135deg, #0A3D91 0%, #0BC4D9 100%); height: 80px; border-radius: 8px 8px 0 0;"></div>
+                    <div style="padding: 16px;">
+                        <h3>Secondary Gradient</h3>
+                        <code>#0A3D91 → #0BC4D9</code>
+                        <p style="margin-top: 8px; color: #6B7280; font-size: 14px;">Banners, hero sections</p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div style="background: #F5F7FA; height: 80px; border-radius: 8px 8px 0 0; border: 1px solid #E5E7EB;"></div>
+                    <div style="padding: 16px;">
+                        <h3>Neutral Light</h3>
+                        <code>#F5F7FA</code>
+                        <p style="margin-top: 8px; color: #6B7280; font-size: 14px;">Page background</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Typography Section -->
+        <div class="section">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-font"></i> Typography System
+                </div>
+                <div class="card-body">
+                    <h1>Heading 1 - 48px Bold</h1>
+                    <h2>Heading 2 - 32px SemiBold</h2>
+                    <h3>Heading 3 - 22px SemiBold</h3>
+                    <p>Body text - 16px Regular. This is a paragraph showing the default body text styling with comfortable line height and professional sans-serif font.</p>
+                    <p style="font-size: 14px; color: #6B7280;">Small text - 14px Regular. Used for captions, labels, and meta information.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Buttons Section -->
+        <div class="section">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-mouse-pointer"></i> Buttons & CTAs
+                </div>
+                <div class="card-body">
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;">
+                        <button>Primary Button</button>
+                        <button class="secondary">Secondary Button</button>
+                        <button class="danger">Danger Button</button>
+                        <button disabled>Disabled Button</button>
+                    </div>
+                    <p style="color: #6B7280; font-size: 14px;">Primary: Cyan background. Secondary: Outlined. Danger: Red for destructive actions.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Cards Section -->
+        <div class="section">
+            <h2><i class="fas fa-layer-group"></i> Cards & Components</h2>
+            <div class="demo-grid">
+                <div class="card">
+                    <div class="card-header">Service Card</div>
+                    <div class="card-body">
+                        <h3>Offensive Security</h3>
+                        <p>Advanced adversary emulation and red team operations.</p>
+                        <button style="margin-top: 16px;">Learn More</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">Service Card</div>
+                    <div class="card-body">
+                        <h3>Defensive Security</h3>
+                        <p>Detection engineering and blue team capabilities.</p>
+                        <button style="margin-top: 16px;">Learn More</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">Service Card</div>
+                    <div class="card-body">
+                        <h3>Advisory Services</h3>
+                        <p>Strategic security consulting and risk assessment.</p>
+                        <button style="margin-top: 16px;">Learn More</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Forms Section -->
+        <div class="section">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-keyboard"></i> Form Elements
+                </div>
+                <div class="card-body">
+                    <div style="max-width: 600px;">
+                        <label>Text Input</label>
+                        <input type="text" placeholder="Enter text here...">
+                        
+                        <label style="margin-top: 16px;">Email Input</label>
+                        <input type="email" placeholder="email@example.com">
+                        
+                        <label style="margin-top: 16px;">Select Dropdown</label>
+                        <select>
+                            <option>Option 1</option>
+                            <option>Option 2</option>
+                            <option>Option 3</option>
+                        </select>
+                        
+                        <label style="margin-top: 16px;">Textarea</label>
+                        <textarea rows="3" placeholder="Enter longer text..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Badges Section -->
+        <div class="section">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-tags"></i> Badges & Status Indicators
+                </div>
+                <div class="card-body">
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px;">
+                        <span class="badge-success">Success</span>
+                        <span class="badge-warning">Warning</span>
+                        <span class="badge-danger">Danger</span>
+                        <span class="badge-info">Info</span>
+                    </div>
+                    
+                    <h3 style="margin-top: 24px;">Status Examples:</h3>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px;">
+                        <span class="status-success">Running</span>
+                        <span class="status-warning">Pending</span>
+                        <span class="status-danger">Failed</span>
+                        <span class="status-info">Queued</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Alerts Section -->
+        <div class="section">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-exclamation-circle"></i> Alerts & Notifications
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <strong>Info:</strong> This is an informational alert with important details.
+                    </div>
+                    
+                    <div class="alert alert-success">
+                        <strong>Success:</strong> Operation completed successfully! All tasks finished.
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <strong>Warning:</strong> Please review this action before proceeding.
+                    </div>
+                    
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong> Something went wrong. Please check the logs.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Table Section -->
+        <div class="section">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-table"></i> Data Tables
+                </div>
+                <div class="card-body">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Agent Name</th>
+                                <th>Platform</th>
+                                <th>Status</th>
+                                <th>Last Seen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>agent-001</td>
+                                <td>Windows 10</td>
+                                <td><span class="badge-success">Active</span></td>
+                                <td>2 minutes ago</td>
+                            </tr>
+                            <tr>
+                                <td>agent-002</td>
+                                <td>Linux Ubuntu</td>
+                                <td><span class="badge-success">Active</span></td>
+                                <td>5 minutes ago</td>
+                            </tr>
+                            <tr>
+                                <td>agent-003</td>
+                                <td>macOS</td>
+                                <td><span class="badge-warning">Idle</span></td>
+                                <td>1 hour ago</td>
+                            </tr>
+                            <tr>
+                                <td>agent-004</td>
+                                <td>Windows Server</td>
+                                <td><span class="badge-danger">Offline</span></td>
+                                <td>3 hours ago</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Configuration Example -->
+        <div class="section">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-cog"></i> Configuration Example
+                </div>
+                <div class="card-body">
+                    <p>To customize these colors, edit <code>plugins/branding/branding_config.yml</code>:</p>
+                    <pre class="code-block">colors:
+  primary_dark: "#020816"
+  primary_accent: "#00D1FF"
+  secondary_accent_start: "#0A3D91"
+  secondary_accent_end: "#0BC4D9"
+  neutral_light: "#F5F7FA"
+
+customization:
+  company_name: "Triskele Labs"
+  tagline: "Advanced Cybersecurity Services"</pre>
+                    
+                    <p style="margin-top: 24px;">Or use the admin interface at: <a href="/plugin/branding/gui">/plugin/branding/gui</a></p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dashboard Preview -->
+        <div class="section">
+            <h2><i class="fas fa-tachometer-alt"></i> Dashboard Preview</h2>
+            <div class="dashboard-header">
+                <h1>Operations Dashboard</h1>
+                <p>Monitor and manage your adversary emulation campaigns</p>
+            </div>
+            
+            <div class="demo-grid" style="margin-top: 24px;">
+                <div class="card">
+                    <h3 style="color: #00D1FF; font-size: 36px; margin-bottom: 8px;">24</h3>
+                    <p style="color: #6B7280;">Active Agents</p>
+                </div>
+                
+                <div class="card">
+                    <h3 style="color: #10B981; font-size: 36px; margin-bottom: 8px;">12</h3>
+                    <p style="color: #6B7280;">Running Operations</p>
+                </div>
+                
+                <div class="card">
+                    <h3 style="color: #F59E0B; font-size: 36px; margin-bottom: 8px;">156</h3>
+                    <p style="color: #6B7280;">Abilities Executed</p>
+                </div>
+                
+                <div class="card">
+                    <h3 style="color: #DC2626; font-size: 36px; margin-bottom: 8px;">3</h3>
+                    <p style="color: #6B7280;">Alerts</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="text-align: center; padding: 40px 0; color: #6B7280; border-top: 1px solid #E5E7EB; margin-top: 60px;">
+            <p style="margin-bottom: 8px;"><strong>Triskele Labs Branding Plugin v1.0.0</strong></p>
+            <p>© 2025 Triskele Labs. All rights reserved.</p>
+            <p style="margin-top: 16px; font-size: 14px;">
+                <a href="#" style="margin: 0 12px;">Documentation</a>
+                <a href="#" style="margin: 0 12px;">GitHub</a>
+                <a href="#" style="margin: 0 12px;">Support</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
