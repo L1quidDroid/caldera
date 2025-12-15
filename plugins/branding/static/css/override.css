@@ -5,29 +5,69 @@
     --triskele-navy: #020816;
 }
 
-/* Navigation - Triskele Green background */
+/* Navigation - Navy/Black background */
 #navigation {
-    background-color: #48CFA0 !important;
+    background-color: #020816 !important;
 }
 
 #navigation .menu-label {
-    color: #020816 !important;
+    color: white !important;
     font-weight: 600 !important;
 }
 
 #navigation .menu-item {
-    color: #020816 !important;
+    color: white !important;
 }
 
 #user-info {
-    color: #020816 !important;
+    color: white !important;
+}
+
+#user-info .team-container {
+    color: white !important;
+}
+
+/* Navigation icons - default green */
+#expandCollapse .icon {
+    color: #48CFA0 !important;
+}
+
+#expandCollapse a {
+    color: #48CFA0 !important;
+}
+
+#navigation .menu .icon {
+    color: #48CFA0 !important;
+}
+
+/* Team icons - use original Caldera colors */
+.is-red,
+.is-red * {
+    color: #cc3311 !important;
+}
+
+.is-blue,
+.is-blue * {
+    color: hsl(204, 86%, 53%) !important;
 }
 
 /* Logo replacement */
-#logo img[src*="caldera-logo"],
-#logo-collapsed img[src*="caldera-logo"] {
+#logo,
+#logo-collapsed {
+    padding: 12px !important;
+    margin: 12px !important;
+}
+
+#logo img,
+#logo-collapsed img {
     content: url('/plugin/branding/static/img/triskele_logo.svg') !important;
     max-width: 180px !important;
+    height: auto !important;
+}
+
+/* For collapsed nav, use smaller logo */
+#logo-collapsed img {
+    max-width: 50px !important;
 }
 
 /* Primary color - replace purple with green */
@@ -52,15 +92,15 @@
 /* Active menu items */
 .router-link-active,
 #navigation .menu-item.router-link-active {
-    background-color: rgba(2, 8, 22, 0.2) !important;
-    color: #020816 !important;
+    background-color: rgba(72, 207, 160, 0.2) !important;
+    color: white !important;
     font-weight: 600 !important;
 }
 
 /* Menu items hover */
 #navigation .menu-item:hover {
-    background-color: rgba(2, 8, 22, 0.1) !important;
-    color: #020816 !important;
+    background-color: rgba(72, 207, 160, 0.1) !important;
+    color: white !important;
 }
 
 /* Links */
