@@ -1,0 +1,113 @@
+/* Triskele Labs Branding - Minimal Internal Tool Design */
+
+:root {
+    --triskele-green: #48CFA0;
+    --triskele-navy: #020816;
+}
+
+/* Navigation - Triskele Green background */
+#navigation {
+    background-color: #48CFA0 !important;
+}
+
+#navigation .menu-label {
+    color: #020816 !important;
+    font-weight: 600 !important;
+}
+
+#navigation .menu-item {
+    color: #020816 !important;
+}
+
+#user-info {
+    color: #020816 !important;
+}
+
+/* Logo replacement */
+#logo img[src*="caldera-logo"],
+#logo-collapsed img[src*="caldera-logo"] {
+    content: url('/plugin/branding/static/img/triskele_logo.svg') !important;
+    max-width: 180px !important;
+}
+
+/* Primary color - replace purple with green */
+.has-background-primary,
+.button.is-primary,
+.tag.is-primary,
+.tabs.is-boxed li.is-active a,
+.tabs.is-toggle li.is-active a {
+    background-color: #48CFA0 !important;
+    color: #020816 !important;
+}
+
+.has-text-primary,
+.tabs li.is-active a {
+    color: #48CFA0 !important;
+}
+
+.button.is-primary:hover {
+    background-color: #3ab88a !important;
+}
+
+/* Active menu items */
+.router-link-active,
+#navigation .menu-item.router-link-active {
+    background-color: rgba(2, 8, 22, 0.2) !important;
+    color: #020816 !important;
+    font-weight: 600 !important;
+}
+
+/* Menu items hover */
+#navigation .menu-item:hover {
+    background-color: rgba(2, 8, 22, 0.1) !important;
+    color: #020816 !important;
+}
+
+/* Links */
+a:not(.button) {
+    color: #48CFA0 !important;
+}
+
+a:not(.button):hover {
+    color: #3ab88a !important;
+}
+
+/* Input focus */
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: #48CFA0 !important;
+    box-shadow: 0 0 0 0.125em rgba(72, 207, 160, 0.25) !important;
+}
+
+/* Checkboxes and radio buttons */
+input[type="checkbox"]:checked,
+input[type="radio"]:checked {
+    background-color: #48CFA0 !important;
+    border-color: #48CFA0 !important;
+}
+
+/* Progress bars */
+.progress::-webkit-progress-value {
+    background-color: #48CFA0 !important;
+}
+
+.progress::-moz-progress-bar {
+    background-color: #48CFA0 !important;
+}
+
+/* Badges and tags */
+.badge.is-success,
+.tag.is-success {
+    background-color: #48CFA0 !important;
+}
+
+/* Tabs border */
+.tabs.is-boxed li.is-active a {
+    border-color: #48CFA0 !important;
+}
+
+/* Switch/Toggle controls */
+.switch input[type="checkbox"]:checked + .check {
+    background-color: #48CFA0 !important;
+}
