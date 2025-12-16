@@ -42,6 +42,7 @@ from app.objects.c_campaign import Campaign
 from services.webhook_service import WebhookPublisher, SIEMIntegration
 from utils.health_check import CalderaHealthCheck
 from agents.enrollment_generator import AgentEnrollmentGenerator
+from orchestrator.pdf_generator import PDFReportGenerator
 
 console = Console()
 logger = logging.getLogger('orchestrator')
@@ -489,19 +490,124 @@ class CalderaOrchestratorCLI:
         self,
         campaign_id: str,
         format: str = 'pdf',
-        include_output: bool = False
+        include_output: bool = False,
+        include_facts: bool = True,
+        attack_layer: bool = True,
+        output_path: Optional[str] = None
     ):
         """Generate campaign report."""
-        campaign = self._load_campaign(campaign_id)
+        console.print(f"\n[bold blue]Generating Campaign Report[/bold blue]\n")
+        console.print(f"Campaign ID:      [cyan]{campaign_id}[/cyan]")
+        console.print(f"Format:           [yellow]{format}[/yellow]")
+        console.print(f"Include Output:   {include_output}")
+        console.print(f"Include Facts:    {include_facts}")
+        console.print(f"ATT&CK Layer:     {attack_layer}\n")
         
-        console.print(f"\n[bold blue]Generating Report[/bold blue]\n")
-        console.print(f"Campaign: {campaign.name}")
-        console.print(f"Format: {format}")
+        if format not in ['pdf', 'json']:
+            console.print(f"[red]Error: Unsupported format '{format}'. Use 'pdf' or 'json'[/red]")
+            return
         
-        # Implementation for report generation
-        # ... (report generation logic using operation reports)
+        # Set default output path
+        if not output_path:
+            reports_dir = Path(self.config.get('reports_dir', 'data/reports'))
+            reports_dir.mkdir(parents=True, exist_ok=True)
+            
+            if format == 'pdf':
+                output_path = str(reports_dir / f"{campaign_id}_report.pdf")
+            else:
+                output_path = str(reports_dir / f"{campaign_id}_report.json")
         
-        console.print(f"\n✅ Report generated\n")
+        caldera_url = self.config['caldera_url']
+        api_key = self.config['api_key_red']
+        
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console
+        ) as progress:
+            
+            if format == 'pdf':
+                # Generate PDF report
+                task1 = progress.add_task("📊 Collecting campaign data...", total=None)
+                
+                generator = PDFReportGenerator(caldera_url, api_key)
+                
+                try:
+                    result = await generator.generate_report(
+                        campaign_id=campaign_id,
+                        output_path=output_path,
+                        include_output=include_output,
+                        include_facts=include_facts,
+                        attack_layer=attack_layer
+                    )
+                    
+                    progress.update(task1, completed=True)
+                    
+                    # Display results
+                    console.print("\n" + "="*60)
+                    console.print("[bold green]📊 REPORT GENERATION COMPLETE[/bold green]")
+                    console.print("="*60)
+                    
+                    table = Table(show_header=False, box=None)
+                    table.add_column("Label", style="cyan")
+                    table.add_column("Value", style="white")
+                    
+                    table.add_row("Campaign ID", result['campaign_id'])
+                    table.add_row("PDF Report", result['pdf_path'])
+                    if result.get('attack_layer_path'):
+                        table.add_row("ATT&CK Layer", result['attack_layer_path'])
+                    table.add_row("File Size", f"{result['file_size_mb']} MB")
+                    table.add_row("Operations", str(result['summary']['total_operations']))
+                    table.add_row("Agents", str(result['summary']['total_agents']))
+                    table.add_row("Abilities Executed", str(result['summary']['total_abilities_executed']))
+                    table.add_row("Success Rate", f"{result['summary']['success_rate']:.1f}%")
+                    table.add_row("Charts Generated", str(result['charts_generated']))
+                    
+                    console.print(table)
+                    console.print("="*60 + "\n")
+                    
+                    # Tip for viewing
+                    console.print("[dim]💡 Tip: Open the PDF report to view detailed campaign analysis with Triskele branding[/dim]")
+                    if result.get('attack_layer_path'):
+                        console.print("[dim]💡 Tip: Upload the ATT&CK layer to https://mitre-attack.github.io/attack-navigator/ for visualization[/dim]\n")
+                    
+                except Exception as e:
+                    progress.update(task1, completed=True)
+                    console.print(f"\n[red]Error generating report: {e}[/red]")
+                    logger.exception("Report generation failed")
+                    raise
+            
+            elif format == 'json':
+                # Generate JSON report
+                task1 = progress.add_task("📊 Collecting campaign data...", total=None)
+                
+                from orchestrator.report_aggregator import ReportAggregator
+                
+                try:
+                    async with ReportAggregator(caldera_url, api_key) as aggregator:
+                        report_data = await aggregator.get_campaign_data(campaign_id)
+                    
+                    # Save JSON
+                    with open(output_path, 'w') as f:
+                        json.dump(report_data, f, indent=2, default=str)
+                    
+                    progress.update(task1, completed=True)
+                    
+                    # Display results
+                    console.print("\n" + "="*60)
+                    console.print("[bold green]📊 JSON REPORT SAVED[/bold green]")
+                    console.print("="*60)
+                    console.print(f"Output: [cyan]{output_path}[/cyan]")
+                    console.print(f"Operations: {report_data['summary']['total_operations']}")
+                    console.print(f"Agents: {report_data['summary']['total_agents']}")
+                    console.print(f"Abilities: {report_data['summary']['total_abilities_executed']}")
+                    console.print("="*60 + "\n")
+                    
+                except Exception as e:
+                    progress.update(task1, completed=True)
+                    console.print(f"\n[red]Error generating JSON report: {e}[/red]")
+                    logger.exception("JSON report generation failed")
+                    raise
 
 
 def main():
@@ -571,8 +677,11 @@ def main():
     
     report_gen = report_sub.add_parser('generate', help='Generate campaign report')
     report_gen.add_argument('campaign_id', help='Campaign ID')
-    report_gen.add_argument('--format', choices=['json', 'pdf', 'csv'], default='pdf')
-    report_gen.add_argument('--include-output', action='store_true', help='Include command output')
+    report_gen.add_argument('--format', choices=['json', 'pdf'], default='pdf', help='Report format (default: pdf)')
+    report_gen.add_argument('--output', '-o', help='Output file path (default: data/reports/<campaign_id>_report.pdf)')
+    report_gen.add_argument('--include-output', action='store_true', help='Include full ability command output (verbose)')
+    report_gen.add_argument('--no-facts', action='store_true', help='Exclude agent facts from report')
+    report_gen.add_argument('--no-attack-layer', action='store_true', help='Skip ATT&CK Navigator layer generation')
     
     args = parser.parse_args()
     
@@ -612,7 +721,14 @@ def main():
         
         elif args.command == 'report':
             if args.subcommand == 'generate':
-                asyncio.run(cli.report_generate(args.campaign_id, args.format, args.include_output))
+                asyncio.run(cli.report_generate(
+                    campaign_id=args.campaign_id,
+                    format=args.format,
+                    include_output=args.include_output,
+                    include_facts=not args.no_facts,
+                    attack_layer=not args.no_attack_layer,
+                    output_path=args.output
+                ))
         
         else:
             parser.print_help()

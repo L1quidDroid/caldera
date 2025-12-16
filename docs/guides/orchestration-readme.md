@@ -2,7 +2,7 @@
 
 > **Comprehensive campaign orchestration for MITRE Caldera** - Centralized management of multi-phase adversary emulation operations with AI-assisted automation.
 
-[![Status](https://img.shields.io/badge/Status-Phase%201--3%20Complete-success)]()
+[![Status](https://img.shields.io/badge/Status-Phase%201--5%20Complete-success)]()
 [![Caldera](https://img.shields.io/badge/Caldera-4.x%2F5.x-blue)]()
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)]()
 
@@ -14,6 +14,8 @@ The **Global Orchestration Pattern** transforms Caldera into an enterprise-grade
 - 🎮 **Orchestrator CLI** - Command-line interface wrapping Caldera REST API, cloud APIs, SIEM APIs, webhooks  
 - 🔗 **Webhook Publisher** - Event-driven notifications to Slack, N8N, SIEM platforms
 - 📊 **SIEM Integration** - Automatic tagging and enrichment for Elasticsearch, Splunk
+- 🆕 **Enrollment API** - REST API for dynamic agent enrollment with CI/CD integration (Phase 5)
+- 🚀 **Platform Bootstrap** - Automated generation of Windows/Linux/macOS enrollment commands
 - 🤖 **AI-Ready** - Enables AI to generate configs and scripts rather than manual UI clicks
 - 🛡️ **Governance** - Approval workflows, scheduling, RBAC, compliance tracking
 
@@ -32,13 +34,21 @@ cp schemas/campaign_spec_example.yml my_campaign.yml
 python3 orchestrator/cli.py campaign create my_campaign.yml
 ```
 
-### 3. Generate Agent Enrollment Scripts
+### 3. Enroll Agents
 
+**Option A: CLI-generated scripts**
 ```bash
 python3 orchestrator/generate_agent_enrollment.py \
   --campaign=<campaign_id> \
   --platform=windows \
   --output=enroll.ps1
+```
+
+**Option B: Enrollment API (Phase 5)**
+```bash
+curl -X POST http://localhost:8888/plugin/enrollment/enroll \
+  -H "Content-Type: application/json" \
+  -d '{"platform":"linux","campaign_id":"<campaign_id>"}'
 ```
 
 ### 4. Start Campaign

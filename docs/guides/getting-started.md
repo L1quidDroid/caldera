@@ -2,7 +2,16 @@
 
 ## ✅ Implementation Complete
 
-Phase 1-3 of the Global Orchestration Pattern is now fully implemented and ready to use!
+Phase 1-5 of the Global Orchestration Pattern is now fully implemented and ready to use!
+
+**Completed Features:**
+- ✅ Campaign management with YAML specifications
+- ✅ Orchestrator CLI with health checks
+- ✅ Agent enrollment script generation
+- ✅ Webhook publisher with SIEM integration
+- ✅ **Enrollment API plugin (Phase 5 - NEW!)**
+- ✅ **Platform-specific bootstrap generation**
+- ✅ **CI/CD integration examples**
 
 ## 📋 Quick Start Checklist
 
@@ -60,8 +69,9 @@ cp schemas/campaign_spec_example.yml my_campaign.yml
 python3 orchestrator/cli.py campaign create my_campaign.yml
 ```
 
-### Step 6: Generate Agent Enrollment Scripts ✓
+### Step 6: Agent Enrollment ✓
 
+**Option A: Using CLI-generated scripts**
 ```bash
 # Windows
 python3 orchestrator/generate_agent_enrollment.py \
@@ -74,6 +84,22 @@ python3 orchestrator/generate_agent_enrollment.py \
   --campaign=<campaign_id> \
   --platform=linux \
   --output=enroll_linux.sh
+```
+
+**Option B: Using Enrollment API (Phase 5 - NEW!)**
+```bash
+# Create enrollment via REST API
+curl -X POST http://localhost:8888/plugin/enrollment/enroll \
+  -H "Content-Type: application/json" \
+  -d '{
+    "platform": "linux",
+    "campaign_id": "<campaign_id>",
+    "tags": ["production"],
+    "hostname": "web-01"
+  }'
+
+# Response includes bootstrap command to execute on target
+# See plugins/enrollment/docs/README.md for complete guide
 ```
 
 ### Step 7: Start Campaign ✓
