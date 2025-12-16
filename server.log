@@ -1,0 +1,174 @@
+2025-12-16 20:11:29 WARNING  --insecure flag set. Caldera will use the default user accounts in default.yml config  server.py:219
+                             file.                                                                                               
+                    INFO     Using main config from conf/default.yml                                                server.py:228
+2025-12-16 20:11:30 ERROR    go does not meet the minimum version of 1.19                                          app_svc.py:188
+                    INFO     Invalid Github Gist personal API token provided. Gist C2 contact will not be      contact_gist.py:70
+                             started.                                                                                            
+                    INFO     Generating temporary SSH private key. Was unable to use provided SSH private key    tunnel_ssh.py:26
+                    INFO     Creating SSH listener on 0.0.0.0, port 8022                                           logging.py:102
+                    ERROR    Error importing plugin=debrief, No module named 'reportlab'                           c_plugin.py:91
+                    ERROR    Error loading plugin=debrief, 'NoneType' object has no attribute 'description'        c_plugin.py:59
+                    INFO     Branding plugin enabled with theme: triskele_labs                                         hook.py:89
+                    INFO     Primary colors: #020816 / #48CFA0                                                         hook.py:90
+                    INFO     Enabled plugin: branding                                                              app_svc.py:131
+                    INFO     Enabled plugin: response                                                              app_svc.py:131
+                    INFO     Enabled plugin: access                                                                app_svc.py:131
+                    INFO     Enabled plugin: manx                                                                  app_svc.py:131
+                    ERROR    Error enabling plugin=enrollment, 'AppService' object has no attribute 'get_logger'   c_plugin.py:70
+                    INFO     Enabled plugin: enrollment                                                            app_svc.py:131
+                    INFO     Enabled plugin: training                                                              app_svc.py:131
+                    INFO     Enabled plugin: stockpile                                                             app_svc.py:131
+                    INFO     Enabled plugin: atomic                                                                app_svc.py:131
+                    INFO     Enabled plugin: fieldmanual                                                           app_svc.py:131
+                    INFO     Enabled plugin: gameboard                                                             app_svc.py:131
+                    INFO     Enabled plugin: sandcat                                                               app_svc.py:131
+                    INFO     Enabled plugin: compass                                                               app_svc.py:131
+                    INFO     Enabled plugin: magma                                                                 app_svc.py:131
+                    ERROR    Error importing plugin=builder, No module named 'docker'                              c_plugin.py:91
+                    ERROR    Error loading plugin=builder, 'NoneType' object has no attribute 'description'        c_plugin.py:59
+                    ERROR    Error importing plugin=builder, No module named 'docker'                              c_plugin.py:91
+                    ERROR    Error enabling plugin=builder, 'NoneType' object has no attribute 'enable'            c_plugin.py:70
+                    INFO     Enabled plugin: builder                                                               app_svc.py:131
+                    INFO     Webhook publisher started                                                      webhook_service.py:44
+                    INFO     Registering webhook publisher with event service                                          hook.py:46
+                    INFO     Orchestrator plugin enabled at /plugin/orchestrator                                       hook.py:65
+                    INFO     Enabled plugin: orchestrator                                                          app_svc.py:131
+                    INFO     serving on 0.0.0.0:2222                                                                server.py:801
+                    WARNING  Unable to properly load .donut for payload plugins.stockpile.app.donut.donut_handler data_svc.py:461
+                             due to failed import                                                                                
+                    WARNING  upx does not meet the minimum version of 0.0.0. Upx is an optional dependency which   app_svc.py:186
+                             adds more functionality.                                                                            
+2025-12-16 20:11:33 WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: df94858e92a23d274ac1d70133d9150f                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: 06d6ac81dae5c0f49dd3d5641eb2c81e                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: 5b93df032e230056c21a3e57334f77d1                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: 0424ccb447bfa66b94162266f55ecd52                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: 53ea111a48f59a3bf7815f1e4a978fa5                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: f1222384fe40cc71e7dea9d182014eaf                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: d9c1b1283c1ad6fdda27be021c4737d3                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: 9d2e91b9241ae43b517be2be98bddfd9                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: dedfa0a54c9c13ce5714a0dc2e1f5d1a                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: 18348573c1f989a6cca9e9bf10809700                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: d5ac8f5ec45224dc36453a9490845f23                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: 8478297ebb155b34c412a0fde335eccd                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: 683115a2ceeb045e6ffbf4487322b220                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: 8a60db80ab6f4a6b1db758c95bacfafa                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: 0aaebed766f7120873d5ad90c23355f8                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: 854e480af3b5e2946bb3ae44916e951a                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: c8e46a29cac614806da56b0be6b0e454                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: b2e76a3113cbfc8e9729b7e170a5a6aa                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: 8e7c28877a9c7826fece190f185b534c                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: 23dafb943f2f1a3e21e8204826c7b271                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: 80be956df11e4a384333150807c3ccd9                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: d38cba2905e62b4c1a7e5c88137ce485                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: 326a9797b0d59b8f6d5a3c384c564b9f                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: db8c6ba84f796a2f1fa1497b8dc1aae2                                                             
+                    WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+                             found: 4d4b29abb6b1e580e33c0035c1fc37ad                                                             
+                    WARNING  Encountered problem while building documentation.                                         hook.py:55
+                             _RemoteTraceback:                                                                                   
+                             """                                                                                                 
+                             Traceback (most recent call last):                                                                  
+                               File                                                                                              
+                             "/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/py           
+                             thon3.13/concurrent/futures/process.py", line 254, in _process_worker                               
+                                 r = call_item.fn(*call_item.args, **call_item.kwargs)                                           
+                               File "/Users/tonyto/Documents/GitHub/Triskele                                                     
+                             Labs/caldera/plugins/fieldmanual/hook.py", line 33, in _run_sphinx_build                            
+                                 import sphinx.cmd.build                                                                         
+                             ModuleNotFoundError: No module named 'sphinx'                                                       
+                             """                                                                                                 
+                                                                                                                                 
+                             The above exception was the direct cause of the following exception:                                
+                                                                                                                                 
+                             ╭────────────────────────── Traceback (most recent call last) ──────────────────────────╮           
+                             │ /Users/tonyto/Documents/GitHub/Triskele Labs/caldera/plugins/fieldmanual/hook.py:53   │           
+                             │ in build_docs                                                                         │           
+                             │                                                                                       │           
+                             │   50 │   loop = loop or asyncio.get_event_loop()                                      │           
+                             │   51 │   with concurrent.futures.ProcessPoolExecutor() as pool:                       │           
+                             │   52 │   │   try:                                                                     │           
+                             │ ❱ 53 │   │   │   out, err = await loop.run_in_executor(pool, _run_sphinx_build)       │           
+                             │   54 │   │   except Exception:                                                        │           
+                             │   55 │   │   │   logger.warning('Encountered problem while building documentation.',  │           
+                             │      exc_info=True)                                                                   │           
+                             │   56                                                                                  │           
+                             ╰───────────────────────────────────────────────────────────────────────────────────────╯           
+                             ModuleNotFoundError: No module named 'sphinx'                                                       
+                    ERROR    Task exception was never retrieved                                               base_events.py:1871
+                             future: <Task finished name='Task-43' coro=<build_docs() done, defined at                           
+                             /Users/tonyto/Documents/GitHub/Triskele                                                             
+                             Labs/caldera/plugins/fieldmanual/hook.py:49> exception=UnboundLocalError("cannot                    
+                             access local variable 'out' where it is not associated with a value")>                              
+                             ╭───────────────────── Traceback (most recent call last) ──────────────────────╮                    
+                             │ /Users/tonyto/Documents/GitHub/Triskele                                      │                    
+                             │ Labs/caldera/plugins/fieldmanual/hook.py:57 in build_docs                    │                    
+                             │                                                                              │                    
+                             │   54 │   │   except Exception:                                               │                    
+                             │   55 │   │   │   logger.warning('Encountered problem while building document │                    
+                             │      exc_info=True)                                                          │                    
+                             │   56 │   │                                                                   │                    
+                             │ ❱ 57 │   │   if 'build succeeded' in out and err:                            │                    
+                             │   58 │   │   │   logger.info(f'Docs built successfully with the following wa │                    
+                             │   59 │   │   elif 'build succeeded' in out:                                  │                    
+                             │   60 │   │   │   logger.info('Docs built successfully.')                     │                    
+                             ╰──────────────────────────────────────────────────────────────────────────────╯                    
+                             UnboundLocalError: cannot access local variable 'out' where it is not associated                    
+                             with a value                                                                                        
+                    INFO     All systems ready.                                                                     server.py:104
+
+ ██████╗ █████╗ ██╗     ██████╗ ███████╗██████╗  █████╗
+██╔════╝██╔══██╗██║     ██╔══██╗██╔════╝██╔══██╗██╔══██╗
+██║     ███████║██║     ██║  ██║█████╗  ██████╔╝███████║
+██║     ██╔══██║██║     ██║  ██║██╔══╝  ██╔══██╗██╔══██║
+╚██████╗██║  ██║███████╗██████╔╝███████╗██║  ██║██║  ██║
+ ╚═════╝╚═╝  ╚═╝╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝
+
+2025-12-16 20:13:17 ERROR    AttributeError("'NoneType' object has no attribute 'identify'")                      rest_api.py:105
+                             ╭─────────────────────── Traceback (most recent call last) ────────────────────────╮                
+                             │ /Users/tonyto/Documents/GitHub/Triskele Labs/caldera/app/api/rest_api.py:63 in   │                
+                             │ rest_core                                                                        │                
+                             │                                                                                  │                
+                             │    60 │   @check_authorization                                                   │                
+                             │    61 │   async def rest_core(self, request):                                    │                
+                             │    62 │   │   try:                                                               │                
+                             │ ❱  63 │   │   │   access = dict(access=tuple(await self.auth_svc.get_permissions │                
+                             │    64 │   │   │   data = dict(await request.json())                              │                
+                             │    65 │   │   │   index = data.pop('index')                                      │                
+                             │    66 │   │   │   options = dict(                                                │                
+                             │                                                                                  │                
+                             │ /Users/tonyto/Documents/GitHub/Triskele Labs/caldera/app/service/auth_svc.py:170 │                
+                             │ in get_permissions                                                               │                
+                             │                                                                                  │                
+                             │   167 │                                                                          │                
+                             │   168 │   async def get_permissions(self, request):                              │                
+                             │   169 │   │   identity_policy = request.config_dict.get('aiohttp_security_identi │                
+                             │ ❱ 170 │   │   identity = await identity_policy.identify(request)                 │                
+                             │   171 │   │   if identity in self.user_map:                                      │                
+                             │   172 │   │   │   return [self.Access[p.upper()] for p in self.user_map[identity │                
+                             │   173 │   │   elif request.headers.get(HEADER_API_KEY) == self.get_config(CONFIG │                
+                             ╰──────────────────────────────────────────────────────────────────────────────────╯                
+                             AttributeError: 'NoneType' object has no attribute 'identify'                                       

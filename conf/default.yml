@@ -35,8 +35,8 @@ plugins:
 - atomic
 - builder
 - compass
-- debrief
-- emu
+# - debrief  # Disabled: missing reportlab dependency
+# - emu  # Disabled: missing dependency
 - enrollment
 - fieldmanual
 - gameboard
