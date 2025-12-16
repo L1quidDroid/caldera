@@ -1,13 +1,17 @@
-/* Triskele Labs Branding - Minimal Internal Tool Design */
+/* Triskele Labs Branding - Enhanced Navigation Design */
 
 :root {
+    --triskele-purple: #8b5cf6;
+    --triskele-purple-light: #a78bfa;
+    --triskele-purple-dark: #7c3aed;
     --triskele-green: #48CFA0;
-    --triskele-navy: #020816;
+    --triskele-navy: #0a0f1a;
+    --triskele-bg-dark: #020816;
 }
 
-/* Navigation - Navy/Black background */
+/* Navigation - Dark theme background */
 #navigation {
-    background-color: #020816 !important;
+    background-color: #0a0f1a !important;
 }
 
 #navigation .menu-label {
@@ -19,36 +23,31 @@
     color: white !important;
 }
 
-#user-info {
-    color: white !important;
-}
-
-#user-info .team-container {
-    color: white !important;
-}
-
-/* Navigation icons - default green */
+/* Navigation icons - purple accent theme */
 #expandCollapse .icon {
-    color: #48CFA0 !important;
+    color: #8b5cf6 !important;
 }
 
 #expandCollapse a {
-    color: #48CFA0 !important;
+    color: #8b5cf6 !important;
 }
 
-#navigation .menu .icon {
-    color: #48CFA0 !important;
+#navigation .menu-label-icon {
+    color: #8b5cf6 !important;
 }
 
-/* Team icons - use original Caldera colors */
-.is-red,
-.is-red * {
-    color: #cc3311 !important;
+#navigation .menu-item-icon {
+    color: rgba(255, 255, 255, 0.6) !important;
+    transition: color 0.2s ease;
 }
 
-.is-blue,
-.is-blue * {
-    color: hsl(204, 86%, 53%) !important;
+#navigation .menu-item:hover .menu-item-icon {
+    color: #8b5cf6 !important;
+}
+
+#navigation .menu-item.router-link-active .menu-item-icon,
+#navigation .menu-item.router-link-exact-active .menu-item-icon {
+    color: #8b5cf6 !important;
 }
 
 /* Logo replacement */
@@ -70,84 +69,96 @@
     max-width: 50px !important;
 }
 
-/* Primary color - replace purple with green */
+/* Primary color - purple accent theme */
 .has-background-primary,
 .button.is-primary,
 .tag.is-primary,
 .tabs.is-boxed li.is-active a,
 .tabs.is-toggle li.is-active a {
-    background-color: #48CFA0 !important;
-    color: #020816 !important;
+    background-color: #8b5cf6 !important;
+    color: white !important;
 }
 
 .has-text-primary,
 .tabs li.is-active a {
-    color: #48CFA0 !important;
+    color: #8b5cf6 !important;
 }
 
 .button.is-primary:hover {
-    background-color: #3ab88a !important;
+    background-color: #7c3aed !important;
 }
 
-/* Active menu items */
+/* Active menu items - purple accent */
 .router-link-active,
-#navigation .menu-item.router-link-active {
-    background-color: rgba(72, 207, 160, 0.2) !important;
+#navigation .menu-item.router-link-active,
+#navigation .menu-item.router-link-exact-active {
+    background-color: rgba(139, 92, 246, 0.15) !important;
     color: white !important;
-    font-weight: 600 !important;
+    font-weight: 500 !important;
+    border-left-color: #8b5cf6 !important;
 }
 
-/* Menu items hover */
+/* Menu items hover - subtle purple tint */
 #navigation .menu-item:hover {
-    background-color: rgba(72, 207, 160, 0.1) !important;
-    color: white !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
 }
 
-/* Links */
+/* Links - purple accent */
 a:not(.button) {
-    color: #48CFA0 !important;
+    color: #8b5cf6 !important;
 }
 
 a:not(.button):hover {
-    color: #3ab88a !important;
+    color: #a78bfa !important;
 }
 
-/* Input focus */
+/* Input focus - purple accent */
 input:focus,
 textarea:focus,
 select:focus {
-    border-color: #48CFA0 !important;
-    box-shadow: 0 0 0 0.125em rgba(72, 207, 160, 0.25) !important;
+    border-color: #8b5cf6 !important;
+    box-shadow: 0 0 0 0.125em rgba(139, 92, 246, 0.25) !important;
 }
 
-/* Checkboxes and radio buttons */
+/* Checkboxes and radio buttons - purple accent */
 input[type="checkbox"]:checked,
 input[type="radio"]:checked {
-    background-color: #48CFA0 !important;
-    border-color: #48CFA0 !important;
+    background-color: #8b5cf6 !important;
+    border-color: #8b5cf6 !important;
 }
 
-/* Progress bars */
+/* Progress bars - purple accent */
 .progress::-webkit-progress-value {
-    background-color: #48CFA0 !important;
+    background-color: #8b5cf6 !important;
 }
 
 .progress::-moz-progress-bar {
-    background-color: #48CFA0 !important;
+    background-color: #8b5cf6 !important;
 }
 
-/* Badges and tags */
+/* Badges and tags - keep green for success states */
 .badge.is-success,
 .tag.is-success {
     background-color: #48CFA0 !important;
 }
 
-/* Tabs border */
+/* Tabs border - purple accent */
 .tabs.is-boxed li.is-active a {
-    border-color: #48CFA0 !important;
+    border-color: #8b5cf6 !important;
 }
 
-/* Switch/Toggle controls */
+/* Switch/Toggle controls - purple accent */
 .switch input[type="checkbox"]:checked + .check {
-    background-color: #48CFA0 !important;
+    background-color: #8b5cf6 !important;
+}
+
+/* Focus indicators for accessibility */
+button:focus,
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    outline: 2px solid #8b5cf6 !important;
+    outline-offset: 2px !important;
 }
