@@ -48,9 +48,17 @@ These plugins are supported and maintained by the Caldera team.
 - **[Manx](https://github.com/mitre/manx)** (shell functionality and reverse shell payloads)
 - **[Response](https://github.com/mitre/response)** (incident response)
 - **[Sandcat](https://github.com/mitre/sandcat)** (default agent)
+
 - **[SSL](https://github.com/mitre/SSL)** (enable https for caldera)
 - **[Stockpile](https://github.com/mitre/stockpile)** (technique and profile storehouse)
 - **[Training](https://github.com/mitre/training)** (certification and training course)
+
+### Custom Enhancements (Triskele Labs)
+- **Enrollment** (Phase 5 - Dynamic agent enrollment REST API for CI/CD integration)
+- **Orchestrator** (Phase 3 - Webhook publisher and SIEM integration)
+- **Global Orchestration** (Phase 1-5 - Campaign management, agent automation, and reporting)
+
+See [ORCHESTRATION_GUIDE.md](ORCHESTRATION_GUIDE.md) for complete implementation details.
 
 ### More
 These plugins are ready to use but are not included by default and are not maintained by the Caldera team.

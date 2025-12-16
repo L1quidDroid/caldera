@@ -89,27 +89,31 @@ This implementation provides a comprehensive global orchestration pattern for MI
   - Campaign notification endpoints
   - Web UI dashboard
 
-### ✅ Phase 5: Completed
+### ✅ Phase 5: Completed (December 2025)
 
 #### Enrollment API Plugin
-- [x] Enrollment plugin with CALDERA integration (`plugins/enrollment/`)
-- [x] REST API for dynamic agent registration
-  - POST `/plugin/enrollment/enroll` - Create enrollment
-  - GET `/plugin/enrollment/enroll/{id}` - Get status
-  - GET `/plugin/enrollment/requests` - List enrollments
-  - GET `/plugin/enrollment/campaigns/{id}/agents` - List campaign agents
+- [x] **Enrollment plugin with CALDERA integration** (`plugins/enrollment/`)
+- [x] **REST API for dynamic agent registration**
+  - POST `/plugin/enrollment/enroll` - Create enrollment with platform-specific bootstrap
+  - GET `/plugin/enrollment/enroll/{id}` - Get enrollment status
+  - GET `/plugin/enrollment/requests` - List all enrollments
+  - GET `/plugin/enrollment/campaigns/{id}/agents` - List agents by campaign
   - GET `/plugin/enrollment/health` - Health check
-- [x] JSON-based persistent storage (`data/enrollment_requests.json`)
-- [x] Platform-specific bootstrap generation (Windows PowerShell, Linux/macOS bash)
-- [x] Campaign-aware agent tagging
-- [x] Environment variable configuration (`CALDERA_URL` with localhost fallback)
-- [x] Local testing examples (`examples/enrollment/`)
-  - Bash test script with curl
-  - Python client example
-  - .env configuration template
-- [x] Comprehensive API documentation (`plugins/enrollment/docs/`)
-  - README with quickstart and troubleshooting
-  - Complete API reference with examples
+- [x] **JSON-based persistent storage** (`plugins/enrollment/data/enrollment_requests.json`)
+- [x] **Platform-specific bootstrap generation** (Windows PowerShell, Linux/macOS bash)
+- [x] **Campaign-aware agent tagging** - Automatic tags from enrollment request
+- [x] **Environment variable configuration** (`CALDERA_URL` with localhost:8888 fallback)
+- [x] **CLI/API separation maintained** - Distinct from orchestrator CLI
+- [x] **Local testing examples** (`examples/enrollment/`)
+  - `test_enrollment_api.sh` - Comprehensive bash test script with curl/jq
+  - `enroll_from_python.py` - Python client with EnrollmentClient class
+  - `.env.example` - Configuration template
+- [x] **Comprehensive documentation** (`plugins/enrollment/docs/`)
+  - `README.md` - Installation, quickstart, troubleshooting (5000+ bytes)
+  - `API.md` - Complete endpoint reference with examples (6000+ bytes)
+- [x] **Comprehensive testing** (`tests/test_phase5_requirements.py`)
+  - 50+ test cases across 8 requirement categories
+  - Color-coded reporting and detailed validation
 
 ### 🚧 Phase 4, 6-9: Scaffolded
 

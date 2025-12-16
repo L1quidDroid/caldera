@@ -4,11 +4,15 @@ Comprehensive orchestration system for multi-phase adversary emulation campaigns
 
 ## Overview
 
+**Status**: Phase 1-5 Complete (December 2025)
+
 The Caldera Campaign Orchestrator provides centralized management for purple team operations through:
 
 - **Campaign Specifications**: YAML-based configuration defining environment, targets, adversaries, SIEM integration, notifications, and governance
 - **CLI Tool**: Command-line interface wrapping Caldera REST API, cloud APIs, SIEM APIs, and webhooks
 - **Multi-Phase Automation**: Orchestrates infrastructure provisioning, agent enrollment, operation execution, SIEM tagging, reporting, and notifications
+- **Enrollment API Plugin**: REST API for dynamic agent enrollment with CI/CD integration (Phase 5)
+- **Webhook Publisher**: Event-driven notifications to external systems with SIEM formatters (Phase 3)
 - **AI-Assisted Operations**: Enables AI to generate configurations and scripts rather than manual UI interaction
 
 ## Architecture
@@ -217,6 +221,7 @@ terraform init && terraform apply
 
 ### Phase 2: Agent Enrollment
 
+**Option A: Using CLI-generated scripts**
 ```bash
 # Generate enrollment scripts
 python3 generate_agent_enrollment.py --campaign=<id> --platform=windows --output=enroll_windows.ps1
@@ -225,6 +230,22 @@ python3 generate_agent_enrollment.py --campaign=<id> --platform=linux --output=e
 # Deploy to targets
 # Windows: Run enroll_windows.ps1 as Administrator
 # Linux: sudo bash enroll_linux.sh
+```
+
+**Option B: Using Enrollment API (Phase 5)**
+```bash
+# Create enrollment via REST API
+curl -X POST http://localhost:8888/plugin/enrollment/enroll \
+  -H "Content-Type: application/json" \
+  -d '{
+    "platform": "linux",
+    "campaign_id": "<campaign_id>",
+    "tags": ["production"],
+    "hostname": "web-01"
+  }'
+
+# Execute returned bootstrap command on target
+# See plugins/enrollment/docs/README.md for details
 ```
 
 ### Phase 3: Operation Execution
@@ -332,27 +353,34 @@ export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..."
 - [x] Basic operation creation via API
 - [x] Campaign status tracking
 
-### 🚧 In Progress
+### ✅ Phase 5 Complete (December 2025)
 
-- [ ] SIEM tagging and event integration (Phase 3)
+- [x] **Enrollment API plugin with REST service**
+- [x] **JSON-based persistent storage**
+- [x] **Platform-specific bootstrap generation (Windows, Linux, macOS)**
+- [x] **Environment variable configuration with fallback**
+- [x] **CLI/API separation maintained**
+- [x] **Testing examples (bash, Python client)**
+- [x] **Comprehensive documentation and API reference**
+
+### 🚧 Planned (Phase 4, 6-9)
+
 - [ ] Internal branding plugin (Phase 4)
-- [ ] Enrollment API service (Phase 5)
-- [ ] PDF report generation (Phase 6)
-- [ ] Slack/N8N notifications (Phase 7)
-- [ ] Governance enforcement (Phase 8)
+- [ ] PDF report generation with ATT&CK Navigator (Phase 6)
+- [ ] Slack/N8N notifications and bot commands (Phase 7)
+- [ ] Governance enforcement and RBAC (Phase 8)
 - [ ] AI-driven TTP evolution (Phase 9)
 
-### 📋 Planned Features
+### 📋 Future Enhancements
 
 - Operation polling and completion detection
-- ATT&CK Navigator layer generation
 - Multi-operation campaign coordination
-- Webhook event publisher
 - Report aggregation across operations
-- RBAC and permission enforcement
+- Enhanced SIEM integrations (Sentinel, Chronicle)
 - Metrics and dashboards (Prometheus/Grafana)
 - AI plugin for ability generation
 - Regression test framework
+- Additional IaC providers (Azure, GCP, Kubernetes)
 
 ## Security Considerations
 
