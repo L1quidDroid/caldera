@@ -89,17 +89,34 @@ This implementation provides a comprehensive global orchestration pattern for MI
   - Campaign notification endpoints
   - Web UI dashboard
 
-### 🚧 Phase 4-9: Scaffolded
+### ✅ Phase 5: Completed
+
+#### Enrollment API Plugin
+- [x] Enrollment plugin with CALDERA integration (`plugins/enrollment/`)
+- [x] REST API for dynamic agent registration
+  - POST `/plugin/enrollment/enroll` - Create enrollment
+  - GET `/plugin/enrollment/enroll/{id}` - Get status
+  - GET `/plugin/enrollment/requests` - List enrollments
+  - GET `/plugin/enrollment/campaigns/{id}/agents` - List campaign agents
+  - GET `/plugin/enrollment/health` - Health check
+- [x] JSON-based persistent storage (`data/enrollment_requests.json`)
+- [x] Platform-specific bootstrap generation (Windows PowerShell, Linux/macOS bash)
+- [x] Campaign-aware agent tagging
+- [x] Environment variable configuration (`CALDERA_URL` with localhost fallback)
+- [x] Local testing examples (`examples/enrollment/`)
+  - Bash test script with curl
+  - Python client example
+  - .env configuration template
+- [x] Comprehensive API documentation (`plugins/enrollment/docs/`)
+  - README with quickstart and troubleshooting
+  - Complete API reference with examples
+
+### 🚧 Phase 4, 6-9: Scaffolded
 
 #### Phase 4: Internal Branding
 - [ ] Internal theme plugin skeleton
 - [ ] Customizable colors and logos
 - [ ] Template overrides
-
-#### Phase 5: Enrollment API
-- [ ] Standalone enrollment service
-- [ ] API for dynamic agent registration
-- [ ] CI/CD integration examples
 
 #### Phase 6: PDF Reporting
 - [ ] Report aggregation across operations
@@ -289,6 +306,15 @@ GET    /plugin/orchestrator/campaigns/{campaign_id}
 POST   /plugin/orchestrator/campaigns/{campaign_id}/notify
 ```
 
+**Enrollment API** (via Enrollment Plugin)
+```
+GET    /plugin/enrollment/health
+POST   /plugin/enrollment/enroll
+GET    /plugin/enrollment/enroll/{request_id}
+GET    /plugin/enrollment/requests
+GET    /plugin/enrollment/campaigns/{campaign_id}/agents
+```
+
 **Caldera Core APIs** (used by orchestrator)
 ```
 GET/POST   /api/v2/operations
@@ -299,6 +325,54 @@ GET        /api/v2/config
 ```
 
 ## Integration Examples
+
+### Enrollment API Usage
+
+```bash
+# Create enrollment request
+curl -X POST http://localhost:8888/plugin/enrollment/enroll \
+  -H "Content-Type: application/json" \
+  -d '{
+    "platform": "linux",
+    "campaign_id": "550e8400-e29b-41d4-a716-446655440000",
+    "tags": ["production", "web-server"],
+    "hostname": "web-01"
+  }'
+
+# Response includes bootstrap command
+{
+  "request_id": "abc-123",
+  "bootstrap_command": "curl -sk http://localhost:8888/file/download ...",
+  "status": "pending"
+}
+
+# Execute on target host
+ssh user@web-01 "$(curl -s http://localhost:8888/plugin/enrollment/enroll/abc-123 | jq -r '.bootstrap_command')"
+
+# List campaign agents
+curl http://localhost:8888/plugin/enrollment/campaigns/550e8400-e29b-41d4-a716-446655440000/agents
+```
+
+### Python Enrollment Client
+
+```python
+import requests
+
+# Create enrollment
+response = requests.post(
+    'http://localhost:8888/plugin/enrollment/enroll',
+    json={
+        'platform': 'linux',
+        'campaign_id': 'my-campaign',
+        'tags': ['automated']
+    }
+)
+enrollment = response.json()
+
+# Execute bootstrap
+import subprocess
+subprocess.run(enrollment['bootstrap_command'], shell=True)
+```
 
 ### SIEM Tagging (Elasticsearch)
 
@@ -388,10 +462,25 @@ caldera/
 │       └── campaign/
 │           └── __init__.py
 ├── plugins/
-│   └── orchestrator/
-│       ├── hook.py                     # Plugin integration
-│       ├── __init__.py
-│       └── README.md
+│   ├── orchestrator/
+│   │   ├── hook.py                     # Orchestrator plugin
+│   │   ├── __init__.py
+│   │   └── README.md
+│   └── enrollment/                     # NEW: Phase 5
+│       ├── hook.py                     # Enrollment plugin integration
+│       ├── app/
+│       │   ├── enrollment_api.py       # REST endpoints
+│       │   └── enrollment_svc.py       # Core service logic
+│       ├── data/
+│       │   └── enrollment_requests.json # Persistent storage
+│       └── docs/
+│           ├── README.md               # Plugin documentation
+│           └── API.md                  # API reference
+├── examples/
+│   └── enrollment/                     # NEW: Phase 5
+│       ├── test_enrollment_api.sh      # Bash testing script
+│       ├── enroll_from_python.py       # Python client example
+│       └── .env.example                # Configuration template
 ├── schemas/
 │   ├── campaign_spec.schema.json       # JSON Schema
 │   └── campaign_spec_example.yml       # Example spec
@@ -580,6 +669,7 @@ For issues or questions:
 
 ---
 
-**Implementation Complete**: Phase 1-3 (Infrastructure, Agents, SIEM/Webhooks)  
-**Ready for Use**: Campaign management, agent enrollment, webhook publishing  
-**Next Phase**: Internal branding plugin and enrollment API service
+**Implementation Complete**: Phase 1-5 (Infrastructure, Agents, SIEM/Webhooks, Enrollment API)  
+**Ready for Use**: Campaign management, agent enrollment CLI, webhook publishing, REST enrollment API  
+**Latest Addition**: Enrollment plugin with JSON persistence and CI/CD integration examples  
+**Next Phase**: Internal branding plugin (Phase 4) and PDF reporting (Phase 6)

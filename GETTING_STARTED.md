@@ -26,7 +26,7 @@ pip install -r orchestrator/requirements.txt
 python3 server.py --insecure
 ```
 
-Wait for "All systems ready" message.
+
 
 ### Step 3: Validate Installation ✓
 
@@ -37,7 +37,7 @@ source venv/bin/activate
 # Run health check
 python3 orchestrator/health_check.py --url=http://localhost:8888
 
-# Expected: All checks should pass ✅
+# Expected: All checks should pass 
 ```
 
 ### Step 4: Run Quick Test ✓
