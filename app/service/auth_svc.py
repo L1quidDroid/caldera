@@ -149,6 +149,9 @@ class AuthService(AuthServiceInterface, BaseService):
         return False
 
     async def request_has_valid_user_session(self, request):
+        # Check if security policy is configured for this request
+        if 'aiohttp_security_identity_policy' not in request.config_dict:
+            return False
         return await aiohttp_security_api.authorized_userid(request) is not None
 
     async def handle_successful_login(self, request, username):
@@ -166,14 +169,18 @@ class AuthService(AuthServiceInterface, BaseService):
             return await self.login_redirect(request, use_template=False)
 
     async def get_permissions(self, request):
-        identity_policy = request.config_dict.get('aiohttp_security_identity_policy')
-        identity = await identity_policy.identify(request)
-        if identity in self.user_map:
-            return [self.Access[p.upper()] for p in self.user_map[identity].permissions]
-        elif request.headers.get(HEADER_API_KEY) == self.get_config(CONFIG_API_KEY_RED):
+        # Check API key authentication first (doesn't require session)
+        if request.headers.get(HEADER_API_KEY) == self.get_config(CONFIG_API_KEY_RED):
             return self.Access.RED, self.Access.APP
         elif request.headers.get(HEADER_API_KEY) == self.get_config(CONFIG_API_KEY_BLUE):
             return self.Access.BLUE, self.Access.APP
+        
+        # Fall back to session-based authentication
+        identity_policy = request.config_dict.get('aiohttp_security_identity_policy')
+        if identity_policy:
+            identity = await identity_policy.identify(request)
+            if identity in self.user_map:
+                return [self.Access[p.upper()] for p in self.user_map[identity].permissions]
         return ()
 
     async def is_request_authenticated(self, request):

@@ -39,9 +39,9 @@ sys.path.insert(0, str(caldera_root))
 sys.path.insert(0, str(orchestrator_root))
 
 from app.objects.c_campaign import Campaign
-from services.webhook_service import WebhookPublisher, SIEMIntegration
-from utils.health_check import CalderaHealthCheck
-from agents.enrollment_generator import AgentEnrollmentGenerator
+from orchestrator.services.webhook_service import WebhookPublisher, SIEMIntegration
+from orchestrator.utils.health_check import CalderaHealthCheck
+from orchestrator.agents.enrollment_generator import AgentEnrollmentGenerator
 from orchestrator.pdf_generator import PDFReportGenerator
 
 console = Console()

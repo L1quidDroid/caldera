@@ -1,7 +1,7 @@
-2025-12-16 20:11:29 WARNING  --insecure flag set. Caldera will use the default user accounts in default.yml config  server.py:219
+2025-12-16 20:48:16 WARNING  --insecure flag set. Caldera will use the default user accounts in default.yml config  server.py:219
                              file.                                                                                               
                     INFO     Using main config from conf/default.yml                                                server.py:228
-2025-12-16 20:11:30 ERROR    go does not meet the minimum version of 1.19                                          app_svc.py:188
+2025-12-16 20:48:17 ERROR    go does not meet the minimum version of 1.19                                          app_svc.py:188
                     INFO     Invalid Github Gist personal API token provided. Gist C2 contact will not be      contact_gist.py:70
                              started.                                                                                            
                     INFO     Generating temporary SSH private key. Was unable to use provided SSH private key    tunnel_ssh.py:26
@@ -38,7 +38,7 @@
                              due to failed import                                                                                
                     WARNING  upx does not meet the minimum version of 0.0.0. Upx is an optional dependency which   app_svc.py:186
                              adds more functionality.                                                                            
-2025-12-16 20:11:33 WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
+2025-12-16 20:48:20 WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
                              found: df94858e92a23d274ac1d70133d9150f                                                             
                     WARNING  Ability referenced in adversary ef4d997c-a0d1-4067-9efa-87c58682db71 but not       c_adversary.py:90
                              found: 06d6ac81dae5c0f49dd3d5641eb2c81e                                                             
@@ -147,28 +147,3 @@
 ╚██████╗██║  ██║███████╗██████╔╝███████╗██║  ██║██║  ██║
  ╚═════╝╚═╝  ╚═╝╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝
 
-2025-12-16 20:13:17 ERROR    AttributeError("'NoneType' object has no attribute 'identify'")                      rest_api.py:105
-                             ╭─────────────────────── Traceback (most recent call last) ────────────────────────╮                
-                             │ /Users/tonyto/Documents/GitHub/Triskele Labs/caldera/app/api/rest_api.py:63 in   │                
-                             │ rest_core                                                                        │                
-                             │                                                                                  │                
-                             │    60 │   @check_authorization                                                   │                
-                             │    61 │   async def rest_core(self, request):                                    │                
-                             │    62 │   │   try:                                                               │                
-                             │ ❱  63 │   │   │   access = dict(access=tuple(await self.auth_svc.get_permissions │                
-                             │    64 │   │   │   data = dict(await request.json())                              │                
-                             │    65 │   │   │   index = data.pop('index')                                      │                
-                             │    66 │   │   │   options = dict(                                                │                
-                             │                                                                                  │                
-                             │ /Users/tonyto/Documents/GitHub/Triskele Labs/caldera/app/service/auth_svc.py:170 │                
-                             │ in get_permissions                                                               │                
-                             │                                                                                  │                
-                             │   167 │                                                                          │                
-                             │   168 │   async def get_permissions(self, request):                              │                
-                             │   169 │   │   identity_policy = request.config_dict.get('aiohttp_security_identi │                
-                             │ ❱ 170 │   │   identity = await identity_policy.identify(request)                 │                
-                             │   171 │   │   if identity in self.user_map:                                      │                
-                             │   172 │   │   │   return [self.Access[p.upper()] for p in self.user_map[identity │                
-                             │   173 │   │   elif request.headers.get(HEADER_API_KEY) == self.get_config(CONFIG │                
-                             ╰──────────────────────────────────────────────────────────────────────────────────╯                
-                             AttributeError: 'NoneType' object has no attribute 'identify'                                       
