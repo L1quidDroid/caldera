@@ -96,7 +96,9 @@ class ReportVisualizations:
             sizes = [successful, failed]
             labels = [f'Successful\n({successful})', f'Failed\n({failed})']
             colors = [self.COLORS['success'], self.COLORS['error']]
-            explode = (0.05, 0)  # Explode success slice slightly
+            # Slightly separate success slice for emphasis
+            PIE_EXPLODE_SUCCESS = 0.05
+            explode = (PIE_EXPLODE_SUCCESS, 0)
             
             wedges, texts, autotexts = ax.pie(
                 sizes,
@@ -150,18 +152,21 @@ class ReportVisualizations:
             success_counts = [data['success'] for data in by_platform.values()]
             
             x = np.arange(len(platforms))
-            width = 0.35
+            # Bar width for side-by-side charts (0.35 leaves spacing between bars)
+            BAR_WIDTH = 0.35
+            
+            # Chart styling constants
+            BAR_ALPHA = 0.8  # Bar transparency
+            GRID_ALPHA = 0.3  # Grid line transparency
             
             # Agent distribution
-            bars1 = ax1.bar(x, agent_counts, width, 
-                          color=self.COLORS['primary'], alpha=0.8)
+            bars1 = ax1.bar(x, agent_counts, BAR_WIDTH,
+                          color=self.COLORS['primary'], alpha=BAR_ALPHA)
             ax1.set_ylabel('Agent Count', fontweight='bold')
             ax1.set_title('Agents by Platform', fontweight='bold')
             ax1.set_xticks(x)
             ax1.set_xticklabels(platforms, rotation=45, ha='right')
-            ax1.grid(axis='y', alpha=0.3)
-            
-            # Add value labels on bars
+            ax1.grid(axis='y', alpha=GRID_ALPHA)            # Add value labels on bars
             for bar in bars1:
                 height = bar.get_height()
                 if height > 0:
@@ -170,10 +175,10 @@ class ReportVisualizations:
                             ha='center', va='bottom', fontweight='bold')
             
             # Ability distribution (successful vs total)
-            bars2 = ax2.bar(x - width/2, ability_counts, width, 
-                          label='Total', color=self.COLORS['neutral_300'], alpha=0.8)
-            bars3 = ax2.bar(x + width/2, success_counts, width, 
-                          label='Successful', color=self.COLORS['success'], alpha=0.8)
+            bars2 = ax2.bar(x - BAR_WIDTH/2, ability_counts, BAR_WIDTH, 
+                          label='Total', color=self.COLORS['neutral_300'], alpha=BAR_ALPHA)
+            bars3 = ax2.bar(x + BAR_WIDTH/2, success_counts, BAR_WIDTH, 
+                          label='Successful', color=self.COLORS['success'], alpha=BAR_ALPHA)
             
             ax2.set_ylabel('Ability Count', fontweight='bold')
             ax2.set_title('Abilities Executed by Platform', fontweight='bold')

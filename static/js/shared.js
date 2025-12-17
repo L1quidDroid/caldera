@@ -247,7 +247,9 @@ function setInnerHTML(elem, html) {
 }
 
 
-// TODO: remove this from all individual plugins in future, as close (x) will be in the tab rather than inside the plugins itself
+// Legacy function for removing modal sections
+// Note: Modern tab interface includes close (x) button in tab header (Phase 2 accessibility work)
+// This function remains for backward compatibility with older plugin implementations
 function removeSection(identifier) {
     $('#' + identifier).remove();
 }
