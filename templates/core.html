@@ -22,12 +22,12 @@
     </head>
     <body>
         <main id="home" class="main" x-data="alpineCore()" x-init="initPage()">
-            <div class="navigation">
-                <a href="#home" class="scroll-top button is-rounded is-primary" x-show="scrollTop > 0">
-                    <span class="icon"><i class="fas fa-chevron-up"></i></span>
+            <nav class="navigation" role="navigation" aria-label="Main navigation">
+                <a href="#home" class="scroll-top button is-rounded is-primary" x-show="scrollTop > 0" aria-label="Scroll to top">
+                    <span class="icon"><i class="fas fa-chevron-up" aria-hidden="true"></i></span>
                 </a>
                 <div class="nav-logo">
-                    <img src="/gui/img/caldera-logo.png" alt="Caldera logo" @click="window.open('https://caldera.mitre.org?ref=caldera', '_blank')"/>
+                    <img src="/gui/img/caldera-logo.png" alt="CALDERA Logo - Click to visit caldera.mitre.org" @click="window.open('https://caldera.mitre.org?ref=caldera', '_blank')" role="button" tabindex="0"/>
                 </div>
                 <div class="is-flex is-justify-content-center">
                     <span class="tag is-primary is-small is-rounded mb-2 p-4 user-badge"><em class="fas fa-user pr-3"></em>{{ user_name }}</span>
@@ -40,13 +40,13 @@
                         </a>
                     </div>
                 </template>
-                <aside id="nav-menu" class="menu">
-                    <p class="menu-label nav-header"><em class="fas fa-flag pr-2"></em>Campaigns</p>
-                    <ul class="menu-list">
-                        <li><a href="#home" class="nav-item" x-on:click="addTab('agents', '/campaign/agents')">agents</a></li>
-                        <li><a href="#home" class="nav-item" x-on:click="addTab('abilities', '/campaign/abilities')">abilities</a></li>
-                        <li><a href="#home" class="nav-item" x-on:click="addTab('adversaries', '/campaign/adversaries')">{{ team_name }}</a></li>
-                        <li><a href="#home" class="nav-item" x-on:click="addTab('operations', '/campaign/operations')">operations</a></li>
+                <aside id="nav-menu" class="menu" role="complementary" aria-label="Sidebar navigation">
+                    <p class="menu-label nav-header"><em class="fas fa-flag pr-2" aria-hidden="true"></em>Campaigns</p>
+                    <ul class="menu-list" role="menu">
+                        <li role="none"><a href="#home" class="nav-item" x-on:click="addTab('agents', '/campaign/agents')" role="menuitem">agents</a></li>
+                        <li role="none"><a href="#home" class="nav-item" x-on:click="addTab('abilities', '/campaign/abilities')" role="menuitem">abilities</a></li>
+                        <li role="none"><a href="#home" class="nav-item" x-on:click="addTab('adversaries', '/campaign/adversaries')" role="menuitem">{{ team_name }}</a></li>
+                        <li role="none"><a href="#home" class="nav-item" x-on:click="addTab('operations', '/campaign/operations')" role="menuitem">operations</a></li>
                     </ul>
                     <p class="menu-label nav-header"><em class="fas fa-puzzle-piece pr-2"></em>Plugins</p>
                     <ul class="menu-list">

@@ -1,13 +1,13 @@
-<div x-data="alpineAgents()" x-init="initPage()" id="main-content">
+<div x-data="alpineAgents()" x-init="initPage()" id="main-content" role="main">
 
     <!-- PAGE HEADER -->
 
-    <div x-ref="header">
+    <header x-ref="header">
         <h2>Agents</h2>
         <p>
             You must deploy at least 1 agent in order to run an operation. Groups are collections of agents so hosts can be compromised simultaneously.
         </p>
-    </div>
+    </header>
     <hr>
 
     <!-- AGENTS TABLE AND CONFIGURATION -->
@@ -61,24 +61,30 @@
                 </div>
             </div>
         </div>
-        <table class="table is-striped is-fullwidth" x-show="agents.length">
+        <table class="table is-striped is-fullwidth" x-show="agents.length" role="table" aria-label="Registered agents">
             <thead>
                 <tr>
-                    <th>id (paw)</th>
-                    <th>host</th>
-                    <th>group</th>
-                    <th>platform</th>
-                    <th>contact</th>
-                    <th>pid</th>
-                    <th>privilege</th>
-                    <th>status</th>
-                    <th>last seen</th>
-                    <td></td>
+                    <th scope="col">id (paw)</th>
+                    <th scope="col">host</th>
+                    <th scope="col">group</th>
+                    <th scope="col">platform</th>
+                    <th scope="col">contact</th>
+                    <th scope="col">pid</th>
+                    <th scope="col">privilege</th>
+                    <th scope="col">status</th>
+                    <th scope="col">last seen</th>
+                    <th scope="col"><span class="sr-only">Actions</span></th>
                 </tr>
             </thead>
             <tbody>
                 <template x-for="(agent, index) of agents" :key="agent.paw">
-                    <tr @click="selectedAgent = agent; showDetailsModal = true;" class="pointer">
+                    <tr @click="selectedAgent = agent; showDetailsModal = true;" 
+                        @keydown.enter="selectedAgent = agent; showDetailsModal = true;"
+                        @keydown.space.prevent="selectedAgent = agent; showDetailsModal = true;"
+                        class="pointer" 
+                        tabindex="0" 
+                        role="button"
+                        :aria-label="'View details for agent ' + agent.paw + ' on ' + agent.host">
                         <td x-text="agent.paw"></td>
                         <td x-text="agent.host"></td>
                         <td x-text="agent.group"></td>

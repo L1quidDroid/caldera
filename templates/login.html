@@ -7,32 +7,32 @@
 		<link href="/gui/css/lib/fa-all.min.css" rel="stylesheet">
 	</head>
 	<body>
-		<div class="container content is-flex is-flex-direction-column is-align-items-center is-justify-content-center">
-			<img src="/gui/img/caldera-logo.png">
+		<main class="container content is-flex is-flex-direction-column is-align-items-center is-justify-content-center" role="main">
+			<img src="/gui/img/caldera-logo.png" alt="CALDERA Logo - Cyber Adversary Emulation Platform">
 			<div class="wrapper">
-				<form action="/enter" method="POST">
+				<form action="/enter" method="POST" aria-label="Login form">
 					<div class="field">
-						<label class="label">Username</label>
+						<label class="label" for="username-input">Username</label>
 						<div class="control has-icons-left">
-							<input class="input" type="text" placeholder="username" name="username">
-							<span class="icon is-small is-left">
+							<input class="input" type="text" placeholder="username" name="username" id="username-input" aria-label="Username" aria-required="true" autocomplete="username">
+							<span class="icon is-small is-left" aria-hidden="true">
 								<i class="fas fa-user"></i>
 							</span>
 						</div>
 					</div>
 					<div class="field">
-						<label class="label">Password</label>
+						<label class="label" for="password-input">Password</label>
 						<div class="control has-icons-left">
-							<input class="input" type="password" placeholder="password" name="password">
-							<span class="icon is-small is-left">
+							<input class="input" type="password" placeholder="password" name="password" id="password-input" aria-label="Password" aria-required="true" autocomplete="current-password">
+							<span class="icon is-small is-left" aria-hidden="true">
 								<i class="fas fa-lock"></i>
 							</span>
 						</div>
 					</div>
-					<button type="submit" class="button fancy-button is-fullwidth">Log In</button>
+					<button type="submit" class="button fancy-button is-fullwidth" aria-label="Log in to CALDERA">Log In</button>
 				</form>
 			</div>
-		</div>
+		</main>
 	</body>
 
 	<style>

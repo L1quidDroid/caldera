@@ -1,19 +1,19 @@
 <div id="operationsPage" x-data="alpineOperations()" x-init="initOperations()"
-     xmlns="http://www.w3.org/1999/html">
+     xmlns="http://www.w3.org/1999/html" role="main">
     <div>
         <div>
-            <div x-ref="operationsHeader">
+            <header x-ref="operationsHeader">
                 <h2>Operations</h2>
-            </div>
+            </header>
             <hr>
         </div>
 
-        <form>
+        <form aria-label="Operation selection and management">
             <div id="select-operation" class="field has-addons">
-                <label class="label">Select an operation &nbsp;&nbsp;&nbsp;</label>
+                <label class="label" for="operation-select">Select an operation &nbsp;&nbsp;&nbsp;</label>
                 <div class="control is-expanded">
                     <div class="select is-small is-fullwidth">
-                        <select x-on:change="getOperations(); getOperation();" x-model="selectedOperationID">
+                        <select x-on:change="getOperations(); getOperation();" x-model="selectedOperationID" id="operation-select" aria-label="Choose an operation to view or manage">
                             <option value="" default disabled selected>Select one...</option>
                             <template x-for="op in operations" :key="op.id">
                                 <option x-bind:value="op.id"
