@@ -4,8 +4,36 @@ from app.utility.base_planning_svc import BasePlanningService
 
 
 class PlanningService(PlanningServiceInterface, BasePlanningService):
+    """Core planning service for CALDERA operations.
+    
+    Manages the execution of adversary emulation plans by coordinating ability
+    scheduling, link generation, bucket execution, and stopping conditions. This
+    service acts as the primary orchestrator for planner implementations, handling
+    the state transitions and link lifecycles during operation execution.
+    
+    The planning service provides utilities for:
+        - Exhausting ability buckets (sequential or batch execution)
+        - Generating executable links from abilities
+        - Monitoring link completion and operation state
+        - Evaluating stopping conditions
+        - Managing planner state machine transitions
+    
+    Attributes:
+        log: Logger instance for this service
+    
+    Examples:
+        >>> planning_svc = PlanningService()
+        >>> await planning_svc.execute_planner(planner)
+        >>> links = await planning_svc.get_links(operation, buckets=['collection'])
+    """
 
     def __init__(self, global_variable_owners=None):
+        """Initialize the planning service.
+        
+        Args:
+            global_variable_owners: Optional mapping of global variable owners
+                for fact resolution during planning. Defaults to None.
+        """
         super().__init__(global_variable_owners=global_variable_owners)
         self.log = self.add_service('planning_svc', self)
 

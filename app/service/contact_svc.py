@@ -14,6 +14,17 @@ from app.utility.base_world import BaseWorld
 
 
 def report(func):
+    """Decorator to log agent beacon and instruction activity.
+    
+    Wraps async functions that handle agent communications, logging the
+    agent PAW, decoded instructions, and timestamp for audit purposes.
+    
+    Args:
+        func: Async function returning (agent, instructions) tuple
+    
+    Returns:
+        Wrapped function that logs before returning original result
+    """
     async def wrapper(*args, **kwargs):
         agent, instructions = await func(*args, **kwargs)
         log = dict(paw=agent.paw, instructions=[BaseWorld.decode_bytes(i.command) for i in instructions],
@@ -25,14 +36,58 @@ def report(func):
 
 
 class ContactService(ContactServiceInterface, BaseService):
+    """Core contact service managing C2 communications and agent interactions.
+    
+    Handles all command-and-control (C2) channel management, agent heartbeat
+    processing, instruction delivery, and result collection. This service is
+    responsible for:
+        - Registering/deregistering C2 contact protocols (HTTP, TCP, WebSocket, etc.)
+        - Processing agent beacons and heartbeats
+        - Managing agent lifecycle (enrollment, updates, removal)
+        - Handling agent result submission and parsing
+        - Managing C2 tunnels for advanced communication
+    
+    The contact service acts as the bridge between deployed agents and the
+    CALDERA server, ensuring reliable bidirectional communication across
+    multiple protocol implementations.
+    
+    Attributes:
+        log: Logger instance for this service
+        contacts: List of registered C2 contact implementations
+        tunnels: List of registered C2 tunnel implementations
+        report: DefaultDict tracking communication logs by contact type
+    
+    Examples:
+        >>> contact_svc = ContactService()
+        >>> await contact_svc.register_contact(http_contact)
+        >>> agent, instructions = await contact_svc.handle_heartbeat(paw='abc123')
+    """
 
     def __init__(self):
+        """Initialize the contact service with empty contact/tunnel lists."""
         self.log = self.add_service('contact_svc', self)
         self.contacts = []
         self.tunnels = []
         self.report = defaultdict(list)
 
     async def register_contact(self, contact):
+        """Register and start a C2 contact protocol implementation.
+        
+        Initializes the contact's C2 channel (HTTP server, TCP listener, etc.)
+        and adds it to the active contacts list for agent communication.
+        
+        Args:
+            contact: Contact protocol implementation to register (e.g., HTTP, TCP,
+                WebSocket). Must implement the contact interface with start/stop methods.
+        
+        Raises:
+            Exception: If contact fails to start due to port conflicts, configuration
+                errors, or other initialization issues. Error is logged but not re-raised.
+        
+        Examples:
+            >>> http_contact = Contact('http')
+            >>> await contact_svc.register_contact(http_contact)
+        """
         try:
             await self._start_c2_channel(contact=contact)
             self.log.debug('Registered contact: %s' % contact.name)
@@ -40,6 +95,19 @@ class ContactService(ContactServiceInterface, BaseService):
             self.log.error('Failed to start %s contact: %s' % (contact.name, e))
 
     async def deregister_contacts(self):
+        """Gracefully shutdown all registered C2 contact protocols.
+        
+        Iterates through all active contacts and stops their C2 channels,
+        closing listening sockets, cleaning up resources, and preventing
+        new agent connections. Called during server shutdown.
+        
+        Raises:
+            Exception: If any contact fails to stop cleanly. Error is logged
+                but iteration continues to attempt shutdown of remaining contacts.
+        
+        Examples:
+            >>> await contact_svc.deregister_contacts()
+        """
         try:
             for contact in self.contacts:
                 await self._stop_c2_channel(contact=contact)
@@ -93,13 +161,49 @@ class ContactService(ContactServiceInterface, BaseService):
         return agent, await self._get_instructions(agent)
 
     async def build_filename(self):
+        """Generate standardized filename for agent payloads.
+        
+        Returns:
+            str: Configured implant name from agents configuration,
+                used as the filename for deployed agent binaries.
+        
+        Examples:
+            >>> filename = await contact_svc.build_filename()
+            >>> # Returns: 'splunkd' or configured implant name
+        """
         return self.get_config(name='agents', prop='implant_name')
 
     async def get_contact(self, name):
+        """Retrieve a registered contact by name.
+        
+        Args:
+            name: Contact protocol name (e.g., 'http', 'tcp', 'websocket')
+        
+        Returns:
+            Contact: The contact implementation matching the given name.
+        
+        Raises:
+            IndexError: If no contact with the given name is registered.
+        
+        Examples:
+            >>> http_contact = await contact_svc.get_contact('http')
+        """
         contact = [c for c in self.contacts if c.name == name]
         return contact[0]
 
     async def get_tunnel(self, name):
+        """Retrieve a registered C2 tunnel by name.
+        
+        Args:
+            name: Tunnel protocol name (e.g., 'ssh', 'smb')
+        
+        Returns:
+            Tunnel or None: The tunnel implementation matching the given name,
+                or None if no tunnel with that name is registered.
+        
+        Examples:
+            >>> ssh_tunnel = await contact_svc.get_tunnel('ssh')
+        """
         tunnel = [t for t in self.tunnels if t.name == name]
         return tunnel[0] if len(tunnel) > 0 else None
 
