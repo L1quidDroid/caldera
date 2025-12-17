@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shared.js Unit Tests</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { color: #333; }
+        .test-suite {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-case {
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #ddd;
+            background: #f9f9f9;
+        }
+        .test-case.pass {
+            border-left-color: #28a745;
+            background: #f0fff0;
+        }
+        .test-case.fail {
+            border-left-color: #dc3545;
+            background: #fff0f0;
+        }
+        .test-name { font-weight: bold; margin-bottom: 5px; }
+        .test-result { font-family: monospace; font-size: 0.9em; color: #666; }
+        .summary {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e9ecef;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .summary.pass { background: #d4edda; color: #155724; }
+        .summary.fail { background: #f8d7da; color: #721c24; }
+        .error { color: #dc3545; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 CALDERA Shared.js Unit Tests</h1>
+    <div id="test-results"></div>
+    <div id="summary" class="summary"></div>
+
+    <!-- Load the shared.js file being tested -->
+    <script src="../../static/js/shared.js"></script>
+
+    <script>
+        /**
+         * Simple test framework for browser-based testing
+         */
+        class TestRunner {
+            constructor() {
+                this.tests = [];
+                this.passed = 0;
+                this.failed = 0;
+            }
+
+            test(name, fn) {
+                this.tests.push({ name, fn });
+            }
+
+            async run() {
+                const resultsDiv = document.getElementById('test-results');
+                
+                for (const test of this.tests) {
+                    const testDiv = document.createElement('div');
+                    testDiv.className = 'test-case';
+                    
+                    const nameDiv = document.createElement('div');
+                    nameDiv.className = 'test-name';
+                    nameDiv.textContent = test.name;
+                    testDiv.appendChild(nameDiv);
+                    
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = 'test-result';
+                    
+                    try {
+                        await test.fn();
+                        testDiv.classList.add('pass');
+                        resultDiv.textContent = '✓ PASS';
+                        this.passed++;
+                    } catch (error) {
+                        testDiv.classList.add('fail');
+                        resultDiv.textContent = '✗ FAIL';
+                        
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'error';
+                        errorDiv.textContent = error.message;
+                        testDiv.appendChild(errorDiv);
+                        
+                        this.failed++;
+                        console.error(`Test failed: ${test.name}`, error);
+                    }
+                    
+                    testDiv.appendChild(resultDiv);
+                    resultsDiv.appendChild(testDiv);
+                }
+                
+                this.showSummary();
+            }
+
+            showSummary() {
+                const summaryDiv = document.getElementById('summary');
+                const total = this.passed + this.failed;
+                const passRate = ((this.passed / total) * 100).toFixed(1);
+                
+                summaryDiv.innerHTML = `
+                    <h2>Test Summary</h2>
+                    <p><strong>${this.passed}</strong> passed, <strong>${this.failed}</strong> failed out of <strong>${total}</strong> tests</p>
+                    <p>Pass Rate: <strong>${passRate}%</strong></p>
+                `;
+                
+                summaryDiv.className = this.failed === 0 ? 'summary pass' : 'summary fail';
+            }
+        }
+
+        function assert(condition, message) {
+            if (!condition) {
+                throw new Error(message || 'Assertion failed');
+            }
+        }
+
+        function assertEqual(actual, expected, message) {
+            if (actual !== expected) {
+                throw new Error(message || `Expected ${expected}, but got ${actual}`);
+            }
+        }
+
+        // Create test runner instance
+        const runner = new TestRunner();
+
+        // =========================================
+        // Test Suite: Date Formatting Constants
+        // =========================================
+        
+        runner.test('MONTH_NAMES_SHORT constant should contain 12 months', () => {
+            assert(typeof MONTH_NAMES_SHORT !== 'undefined', 'MONTH_NAMES_SHORT should be defined');
+            assertEqual(MONTH_NAMES_SHORT.length, 12, 'Should have exactly 12 months');
+        });
+
+        runner.test('MONTH_NAMES_SHORT should have correct abbreviations', () => {
+            assertEqual(MONTH_NAMES_SHORT[0], 'Jan', 'January abbreviation');
+            assertEqual(MONTH_NAMES_SHORT[1], 'Feb', 'February abbreviation');
+            assertEqual(MONTH_NAMES_SHORT[5], 'Jun', 'June abbreviation');
+            assertEqual(MONTH_NAMES_SHORT[11], 'Dec', 'December abbreviation');
+        });
+
+        runner.test('TIME_UNITS constant should have correct values', () => {
+            assert(typeof TIME_UNITS !== 'undefined', 'TIME_UNITS should be defined');
+            assertEqual(TIME_UNITS.MINUTE, 60, 'Minute should be 60 seconds');
+            assertEqual(TIME_UNITS.HOUR, 3600, 'Hour should be 3600 seconds');
+            assertEqual(TIME_UNITS.DAY, 86400, 'Day should be 86400 seconds');
+        });
+
+        // =========================================
+        // Test Suite: getHumanFriendlyTime()
+        // =========================================
+
+        runner.test('getHumanFriendlyTime() should return empty string for null input', () => {
+            const result = getHumanFriendlyTime(null);
+            assertEqual(result, '', 'Should return empty string for null');
+        });
+
+        runner.test('getHumanFriendlyTime() should return empty string for empty string', () => {
+            const result = getHumanFriendlyTime('');
+            assertEqual(result, '', 'Should return empty string for empty input');
+        });
+
+        runner.test('getHumanFriendlyTime() should format "just now" correctly', () => {
+            // Create a date just a few seconds ago
+            const now = new Date();
+            const dateStr = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')} ${String(now.getUTCHours()).padStart(2, '0')}:${String(now.getUTCMinutes()).padStart(2, '0')}:${String(now.getUTCSeconds()).padStart(2, '0')}`;
+            
+            const result = getHumanFriendlyTime(dateStr);
+            assert(result === 'just now' || result.includes('seconds ago'), 'Should show "just now" or seconds ago');
+        });
+
+        runner.test('getHumanFriendlyTime() should format minutes correctly', () => {
+            // Create a date 5 minutes ago
+            const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+            const dateStr = `${fiveMinutesAgo.getUTCFullYear()}-${String(fiveMinutesAgo.getUTCMonth() + 1).padStart(2, '0')}-${String(fiveMinutesAgo.getUTCDate()).padStart(2, '0')} ${String(fiveMinutesAgo.getUTCHours()).padStart(2, '0')}:${String(fiveMinutesAgo.getUTCMinutes()).padStart(2, '0')}:${String(fiveMinutesAgo.getUTCSeconds()).padStart(2, '0')}`;
+            
+            const result = getHumanFriendlyTime(dateStr);
+            assert(result.includes('min ago'), `Should show minutes ago, got: ${result}`);
+        });
+
+        runner.test('getHumanFriendlyTime() should format hours correctly', () => {
+            // Create a date 3 hours ago
+            const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
+            const dateStr = `${threeHoursAgo.getUTCFullYear()}-${String(threeHoursAgo.getUTCMonth() + 1).padStart(2, '0')}-${String(threeHoursAgo.getUTCDate()).padStart(2, '0')} ${String(threeHoursAgo.getUTCHours()).padStart(2, '0')}:${String(threeHoursAgo.getUTCMinutes()).padStart(2, '0')}:${String(threeHoursAgo.getUTCSeconds()).padStart(2, '0')}`;
+            
+            const result = getHumanFriendlyTime(dateStr);
+            assert(result.includes('hrs ago') || result.includes('hr ago'), `Should show hours ago, got: ${result}`);
+        });
+
+        runner.test('getHumanFriendlyTime() should format yesterday correctly', () => {
+            // Create a date 1.5 days ago
+            const yesterday = new Date(Date.now() - 1.5 * 24 * 60 * 60 * 1000);
+            const dateStr = `${yesterday.getUTCFullYear()}-${String(yesterday.getUTCMonth() + 1).padStart(2, '0')}-${String(yesterday.getUTCDate()).padStart(2, '0')} ${String(yesterday.getUTCHours()).padStart(2, '0')}:${String(yesterday.getUTCMinutes()).padStart(2, '0')}:${String(yesterday.getUTCSeconds()).padStart(2, '0')}`;
+            
+            const result = getHumanFriendlyTime(dateStr);
+            assert(result.startsWith('yesterday'), `Should start with "yesterday", got: ${result}`);
+        });
+
+        runner.test('getHumanFriendlyTime() should format older dates with month name', () => {
+            // Create a date 10 days ago (should show month name)
+            const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
+            const dateStr = `${tenDaysAgo.getUTCFullYear()}-${String(tenDaysAgo.getUTCMonth() + 1).padStart(2, '0')}-${String(tenDaysAgo.getUTCDate()).padStart(2, '0')} ${String(tenDaysAgo.getUTCHours()).padStart(2, '0')}:${String(tenDaysAgo.getUTCMinutes()).padStart(2, '0')}:${String(tenDaysAgo.getUTCSeconds()).padStart(2, '0')}`;
+            
+            const result = getHumanFriendlyTime(dateStr);
+            const expectedMonth = MONTH_NAMES_SHORT[tenDaysAgo.getUTCMonth()];
+            assert(result.includes(expectedMonth), `Should include month name ${expectedMonth}, got: ${result}`);
+        });
+
+        runner.test('getHumanFriendlyTime() should use MONTH_NAMES_SHORT constant', () => {
+            // Test specific month - August 25, 2020
+            const dateStr = '2020-08-25 10:03:23';
+            const result = getHumanFriendlyTime(dateStr);
+            
+            // Should contain 'Aug' from the constant array
+            assert(result.includes('Aug'), `Should contain "Aug" month name, got: ${result}`);
+        });
+
+        // =========================================
+        // Test Suite: getHumanFriendlyTimeISO8601()
+        // =========================================
+
+        runner.test('getHumanFriendlyTimeISO8601() should handle ISO8601 format', () => {
+            // Create ISO8601 timestamp
+            const now = new Date();
+            const isoStr = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}T${String(now.getUTCHours()).padStart(2, '0')}:${String(now.getUTCMinutes()).padStart(2, '0')}:${String(now.getUTCSeconds()).padStart(2, '0')}Z`;
+            
+            const result = getHumanFriendlyTimeISO8601(isoStr);
+            assert(result.length > 0, 'Should return non-empty result');
+            assert(result === 'just now' || result.includes('seconds ago') || result.includes('min ago'), 'Should show relative time');
+        });
+
+        runner.test('getHumanFriendlyTimeISO8601() should correctly strip T and Z', () => {
+            // Test that it correctly converts ISO8601 to the expected format
+            const isoStr = '2020-08-25T10:03:23Z';
+            const result = getHumanFriendlyTimeISO8601(isoStr);
+            
+            // Should have called getHumanFriendlyTime with '2020-08-25 10:03:23'
+            assert(result.includes('Aug'), 'Should format with month name for old dates');
+        });
+
+        // =========================================
+        // Test Suite: Backwards Compatibility
+        // =========================================
+
+        runner.test('Refactored code should produce same results as before', () => {
+            // Test known date to ensure output hasn't changed
+            const testDate = '2020-01-15 14:30:00';
+            const result = getHumanFriendlyTime(testDate);
+            
+            // Should show month name for dates this old
+            assert(result.includes('Jan'), 'Should show January for old date');
+            assert(result.includes('15'), 'Should show day 15');
+        });
+
+        // Run all tests
+        window.addEventListener('load', () => {
+            runner.run();
+        });
+    </script>
+</body>
+</html>
