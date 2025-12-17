@@ -30,6 +30,205 @@ except ImportError:
 console = Console()
 
 
+class ScriptValidator:
+    """Validates generated enrollment scripts for syntax and security issues."""
+    
+    @staticmethod
+    def validate_powershell(script: str) -> tuple[bool, list[str]]:
+        """
+        Validate PowerShell script syntax and security.
+        
+        Returns:
+            (is_valid, error_messages)
+        """
+        errors = []
+        
+        # Check for dangerous commands
+        dangerous_patterns = [
+            ('Invoke-Expression', 'Use of Invoke-Expression is dangerous'),
+            ('iex ', 'Use of iex alias is dangerous'),
+            ('DownloadString', 'Direct DownloadString without validation'),
+            ('-EncodedCommand', 'Encoded commands may hide malicious content'),
+        ]
+        
+        for pattern, message in dangerous_patterns:
+            if pattern in script:
+                errors.append(f"⚠️  Security: {message}")
+        
+        # Check for required elements
+        required_elements = [
+            ('$CALDERA_SERVER', 'Missing server configuration variable'),
+            ('$CALDERA_PORT', 'Missing port configuration variable'),
+            ('Write-Host', 'Missing user feedback messages'),
+            ('-ForegroundColor', 'Missing colored output'),
+        ]
+        
+        for element, message in required_elements:
+            if element not in script:
+                errors.append(f"❌ Missing: {message}")
+        
+        # Check for error handling
+        if 'try {' not in script or 'catch {' not in script:
+            errors.append("⚠️  Missing error handling (try/catch)")
+        
+        # Check for admin privilege warning
+        if 'Administrator' not in script and 'isAdmin' not in script:
+            errors.append("⚠️  Missing administrator privilege check")
+        
+        # Check script starts with comment header
+        if not script.strip().startswith('#'):
+            errors.append("❌ Script should start with comment header")
+        
+        # Basic syntax checks
+        if script.count('{') != script.count('}'):
+            errors.append("❌ Unbalanced curly braces")
+        
+        if script.count('(') != script.count(')'):
+            errors.append("❌ Unbalanced parentheses")
+        
+        # Check for hardcoded secrets (except examples)
+        if 'password=' in script.lower() or 'apikey=' in script.lower():
+            if 'example' not in script.lower():
+                errors.append("⚠️  Security: Possible hardcoded credentials")
+        
+        return len(errors) == 0, errors
+    
+    @staticmethod
+    def validate_bash(script: str) -> tuple[bool, list[str]]:
+        """
+        Validate Bash script syntax and security.
+        
+        Returns:
+            (is_valid, error_messages)
+        """
+        errors = []
+        
+        # Check for dangerous commands
+        dangerous_patterns = [
+            ('eval ', 'Use of eval is dangerous'),
+            ('curl | bash', 'Piping curl to bash is dangerous'),
+            ('wget | sh', 'Piping wget to sh is dangerous'),
+            ('chmod 777', 'Overly permissive permissions'),
+        ]
+        
+        for pattern, message in dangerous_patterns:
+            if pattern in script:
+                errors.append(f"⚠️  Security: {message}")
+        
+        # Check for shebang
+        if not script.strip().startswith('#!/bin/bash') and not script.strip().startswith('#!/usr/bin/env bash'):
+            errors.append("❌ Missing shebang (#!/bin/bash)")
+        
+        # Check for required elements
+        required_elements = [
+            ('CALDERA_SERVER=', 'Missing server configuration variable'),
+            ('CALDERA_PORT=', 'Missing port configuration variable'),
+            ('echo ', 'Missing user feedback messages'),
+            ('set -e', 'Missing error exit mode (set -e)'),
+        ]
+        
+        for element, message in required_elements:
+            if element not in script:
+                errors.append(f"❌ Missing: {message}")
+        
+        # Check for error handling
+        if 'if [ ' not in script and 'if [[ ' not in script:
+            errors.append("⚠️  Missing conditional error checks")
+        
+        # Check for privilege warning
+        if 'EUID' not in script and 'root' not in script.lower():
+            errors.append("⚠️  Missing root privilege check")
+        
+        # Check script has comment header
+        lines = script.strip().split('\n')
+        if len(lines) < 2 or not lines[1].strip().startswith('#'):
+            errors.append("❌ Script should have comment header after shebang")
+        
+        # Basic syntax checks
+        single_quote_count = script.count("'")
+        double_quote_count = script.count('"')
+        
+        if single_quote_count % 2 != 0:
+            errors.append("❌ Unbalanced single quotes")
+        
+        if double_quote_count % 2 != 0:
+            errors.append("❌ Unbalanced double quotes")
+        
+        # Check for proper variable quoting
+        if '$CALDERA_SERVER' in script and '"$CALDERA_SERVER"' not in script and '"${CALDERA_SERVER}"' not in script:
+            errors.append("⚠️  Variable should be quoted: $CALDERA_SERVER")
+        
+        # Check for hardcoded secrets
+        if 'password=' in script.lower() or 'api_key=' in script.lower():
+            if 'example' not in script.lower():
+                errors.append("⚠️  Security: Possible hardcoded credentials")
+        
+        return len(errors) == 0, errors
+    
+    @staticmethod
+    def validate_yaml(content: str) -> tuple[bool, list[str]]:
+        """
+        Validate YAML syntax.
+        
+        Returns:
+            (is_valid, error_messages)
+        """
+        errors = []
+        
+        try:
+            yaml.safe_load(content)
+        except yaml.YAMLError as e:
+            errors.append(f"❌ YAML syntax error: {e}")
+            return False, errors
+        
+        # Check for required docker-compose elements
+        if 'version:' not in content:
+            errors.append("❌ Missing version field in docker-compose")
+        
+        if 'services:' not in content:
+            errors.append("❌ Missing services field in docker-compose")
+        
+        return len(errors) == 0, errors
+    
+    @staticmethod
+    def validate_terraform(content: str) -> tuple[bool, list[str]]:
+        """
+        Validate Terraform configuration.
+        
+        Returns:
+            (is_valid, error_messages)
+        """
+        errors = []
+        
+        # Check for required Terraform elements
+        required_elements = [
+            ('resource "', 'Missing resource definitions'),
+            ('variable "', 'Missing variable definitions'),
+            ('output "', 'Missing output definitions'),
+        ]
+        
+        for element, message in required_elements:
+            if element not in content:
+                errors.append(f"⚠️  {message}")
+        
+        # Check for security groups
+        if 'aws_security_group' not in content:
+            errors.append("⚠️  Missing AWS security group definition")
+        
+        # Check for hardcoded credentials
+        if 'access_key' in content.lower() or 'secret_key' in content.lower():
+            errors.append("⚠️  Security: Avoid hardcoding AWS credentials")
+        
+        # Basic syntax checks
+        if content.count('{') != content.count('}'):
+            errors.append("❌ Unbalanced curly braces")
+        
+        if content.count('[') != content.count(']'):
+            errors.append("❌ Unbalanced square brackets")
+        
+        return len(errors) == 0, errors
+
+
 class AgentEnrollmentGenerator:
     """Generate agent enrollment scripts for campaigns."""
 
@@ -676,6 +875,8 @@ def main():
     )
     
     # Generate script based on platform
+    validator = ScriptValidator()
+    
     if args.platform == 'windows':
         script = generator.generate_windows_script(
             base_command="",
@@ -684,6 +885,7 @@ def main():
         )
         extension = "ps1"
         syntax = "powershell"
+        is_valid, validation_errors = validator.validate_powershell(script)
     elif args.platform in ['linux', 'darwin']:
         script = generator.generate_linux_script(
             base_command="",
@@ -692,14 +894,27 @@ def main():
         )
         extension = "sh"
         syntax = "bash"
+        is_valid, validation_errors = validator.validate_bash(script)
     elif args.platform == 'docker':
         script = generator.generate_docker_compose()
         extension = "yml"
         syntax = "yaml"
+        is_valid, validation_errors = validator.validate_yaml(script)
     elif args.platform == 'terraform-aws':
         script = generator.generate_terraform_aws()
         extension = "tf"
         syntax = "terraform"
+        is_valid, validation_errors = validator.validate_terraform(script)
+    
+    # Display validation results
+    console.print(f"\n[bold cyan]🔍 Script Validation Results:[/bold cyan]\n")
+    if is_valid:
+        console.print("[green]✅ All validation checks passed![/green]")
+    else:
+        console.print(f"[yellow]⚠️  Found {len(validation_errors)} validation issue(s):[/yellow]")
+        for error in validation_errors:
+            console.print(f"  {error}")
+        console.print()
     
     # Output
     if args.output:

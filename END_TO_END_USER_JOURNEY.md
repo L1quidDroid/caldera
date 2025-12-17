@@ -402,6 +402,218 @@ curl -s http://localhost:8888/plugin/orchestrator/webhooks | jq '.'
 
 ---
 
+### Step 3.4: Verify Webhook Functionality
+
+#### Option A: Using webhook.site (Recommended for Testing)
+
+**1. Get a free webhook URL:**
+- Visit https://webhook.site in your browser
+- Copy the unique URL (e.g., `https://webhook.site/abc123-def456`)
+
+**2. Register the webhook:**
+```bash
+curl -X POST http://localhost:8888/plugin/orchestrator/webhooks \
+  -H "KEY: ADMIN123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://webhook.site/abc123-def456",
+    "exchanges": ["campaign", "operation"],
+    "queues": ["*"]
+  }'
+```
+
+**3. Trigger an operation event:**
+```bash
+# Create a test operation
+curl -X POST http://localhost:8888/api/v2/operations \
+  -H "KEY: ADMIN123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "webhook-test-operation",
+    "adversary": {
+      "adversary_id": "ad-hoc"
+    },
+    "auto_close": true,
+    "state": "running"
+  }' | jq '.id'
+```
+
+**4. Check webhook.site for incoming payload**
+
+You should see a POST request with JSON payload like:
+```json
+{
+  "exchange": "operation",
+  "routing_key": "operation.created",
+  "timestamp": "2025-12-16T10:30:00Z",
+  "data": {
+    "id": "operation-id",
+    "name": "webhook-test-operation",
+    "state": "running",
+    "adversary": {...}
+  }
+}
+```
+
+**5. Verify webhook stats:**
+```bash
+curl -s http://localhost:8888/plugin/orchestrator/webhooks | jq '.[].stats'
+```
+
+**Expected Output:**
+```json
+{
+  "sent": 1,
+  "failed": 0,
+  "last_sent": "2025-12-16T10:30:00Z"
+}
+```
+
+---
+
+#### Option B: Using Local Test Server
+
+**1. Start a simple webhook receiver:**
+```bash
+# In a separate terminal
+python3 -m http.server 9000
+```
+
+Or create a more sophisticated receiver:
+```bash
+# Save as webhook_receiver.py
+cat > webhook_receiver.py << 'EOF'
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import json
+
+class WebhookHandler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        content_length = int(self.headers['Content-Length'])
+        body = self.rfile.read(content_length)
+        
+        print("\n" + "="*50)
+        print("📥 Webhook Received!")
+        print("="*50)
+        try:
+            payload = json.loads(body)
+            print(json.dumps(payload, indent=2))
+        except:
+            print(body.decode('utf-8'))
+        print("="*50 + "\n")
+        
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
+        self.wfile.write(b'{"status": "received"}')
+    
+    def log_message(self, format, *args):
+        pass  # Suppress default logging
+
+print("🎣 Webhook receiver listening on http://localhost:9000/webhook")
+HTTPServer(('localhost', 9000), WebhookHandler).serve_forever()
+EOF
+
+python3 webhook_receiver.py
+```
+
+**2. Register the local webhook:**
+```bash
+curl -X POST http://localhost:8888/plugin/orchestrator/webhooks \
+  -H "KEY: ADMIN123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "http://localhost:9000/webhook",
+    "exchanges": ["campaign", "operation"],
+    "queues": ["*"]
+  }'
+```
+
+**3. Trigger events and watch output** in the webhook_receiver terminal
+
+---
+
+#### Common Webhook Event Types
+
+| Event | Routing Key | Triggered By |
+|-------|-------------|--------------|
+| Operation Created | `operation.created` | Starting new operation |
+| Operation Updated | `operation.updated` | State change, links added |
+| Operation Completed | `operation.completed` | Operation finishes |
+| Campaign Started | `campaign.started` | CLI: `campaign run` |
+| Campaign Completed | `campaign.completed` | All operations done |
+| Agent Connected | `agent.connected` | New agent beacon |
+| Agent Disconnected | `agent.disconnected` | Agent timeout |
+
+---
+
+#### Webhook Troubleshooting
+
+**Issue: Webhook not receiving payloads**
+
+1. **Check webhook is registered:**
+   ```bash
+   curl -s http://localhost:8888/plugin/orchestrator/webhooks | jq '.'
+   ```
+
+2. **Verify URL is reachable:**
+   ```bash
+   curl -X POST https://webhook.site/your-id \
+     -H "Content-Type: application/json" \
+     -d '{"test": "message"}'
+   ```
+
+3. **Check webhook stats for failures:**
+   ```bash
+   curl -s http://localhost:8888/plugin/orchestrator/webhooks | jq '.[].stats'
+   ```
+
+4. **Review server logs:**
+   ```bash
+   tail -f logs/caldera.log | grep -i webhook
+   ```
+
+**Issue: "Connection refused" error**
+
+- For local webhooks: Ensure receiver is running on correct port
+- For webhook.site: Check internet connectivity
+- For internal URLs: Verify firewall rules
+
+**Issue: Receiving partial/corrupted payloads**
+
+- Check webhook receiver handles Content-Length properly
+- Ensure Content-Type is `application/json`
+- Verify receiver returns 2xx status code
+
+---
+
+#### Advanced: Filtering Webhooks by Queue
+
+**Register webhook for specific campaign only:**
+```bash
+curl -X POST http://localhost:8888/plugin/orchestrator/webhooks \
+  -H "KEY: ADMIN123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://webhook.site/campaign-specific",
+    "exchanges": ["campaign"],
+    "queues": ["campaign.test-campaign-001"]
+  }'
+```
+
+**Register webhook for operation state changes only:**
+```bash
+curl -X POST http://localhost:8888/plugin/orchestrator/webhooks \
+  -H "KEY: ADMIN123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://webhook.site/operations-only",
+    "exchanges": ["operation"],
+    "queues": ["operation.updated", "operation.completed"]
+  }'
+```
+
+---
+
 ## Phase 5: Enrollment API Plugin
 
 ### Step 5.1: Verify Enrollment Plugin Health
