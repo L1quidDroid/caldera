@@ -296,7 +296,23 @@ python orchestrator/cli.py health-check --campaign demo_red_team_2025
 
 ---
 
-## Phase 4: Operation Execution (Not Yet Implemented)
+## Phase 4: Operation Execution (Partially Implemented)
+
+**Status**: Core functionality operational, advanced features in development  
+**Completion**: 60% - See [ROADMAP.md](ROADMAP.md) for details
+
+### ✅ Currently Available Features
+- Manual operation start via CLI
+- Real-time status monitoring  
+- Operation pause/resume capabilities
+- Result collection and logging
+- Campaign-as-code execution
+
+### 🚧 In Development (Q1 2026)
+- Automated operation sequencing with dependencies
+- Advanced failure recovery with retry logic
+- Auto-scaling agent deployment
+- Intelligent operation planning
 
 **Purpose**: Execute multi-phase operations with orchestration.
 

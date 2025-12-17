@@ -60,6 +60,25 @@ These plugins are supported and maintained by the Caldera team.
 
 See [ORCHESTRATION_GUIDE.md](ORCHESTRATION_GUIDE.md) for complete implementation details.
 
+## Implementation Status
+
+| Phase | Feature | Status | Completion | Notes |
+|-------|---------|--------|------------|-------|
+| 1-3 | Campaign Management, Webhook Publisher, SIEM Integration | ✅ Complete | 100% | Production ready |
+| 4 | Automated Operation Execution | 🚧 Partial | 60% | CLI commands functional, full automation pending |
+| 5 | Dynamic Agent Enrollment REST API | ✅ Complete | 100% | Production ready, 50+ tests passing |
+| 6 | PDF Reporting with Branding | ✅ Complete | 100% | Production ready with Triskele branding |
+
+### Phase 4 Status Details
+- ✅ **Functional**: Manual operation start via CLI
+- ✅ **Functional**: Status monitoring and progress tracking  
+- ✅ **Functional**: Campaign-as-code with YAML specifications
+- 🚧 **In Progress**: Automated sequencing and failure recovery
+- 🚧 **In Progress**: Advanced scheduling and orchestration
+- 🚧 **Planned**: Auto-remediation on agent failure
+
+See [ROADMAP.md](ROADMAP.md) for Phase 4 completion timeline.
+
 ### More
 These plugins are ready to use but are not included by default and are not maintained by the Caldera team.
 - **[Arsenal](https://github.com/mitre-atlas/arsenal)** (MITRE ATLAS techniques and profiles)
