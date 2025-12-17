@@ -10,6 +10,17 @@ import aiohttp
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from collections import defaultdict
+import logging
+
+from .exceptions import (
+    APIConnectionError,
+    APIRequestError,
+    CampaignNotFoundError,
+    DataValidationError
+)
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 
 class ReportAggregator:
@@ -51,13 +62,32 @@ class ReportAggregator:
             
         Returns:
             JSON response data
+            
+        Raises:
+            APIConnectionError: If unable to connect to API
+            APIRequestError: If API returns error status
         """
         url = f"{self.caldera_url}{endpoint}"
-        async with self.session.get(url) as response:
-            if response.status == 200:
-                return await response.json()
-            else:
-                raise Exception(f"API request failed: {response.status} {url}")
+        try:
+            async with self.session.get(url) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    response_text = await response.text()
+                    logger.error(f"API request failed: {response.status} {url}")
+                    raise APIRequestError(
+                        endpoint=endpoint,
+                        status=response.status,
+                        response_body=response_text
+                    )
+        except aiohttp.ClientError as e:
+            logger.error(f"Failed to connect to CALDERA API at {url}: {e}")
+            raise APIConnectionError(url=url, reason=str(e))
+        except Exception as e:
+            if isinstance(e, (APIConnectionError, APIRequestError)):
+                raise
+            logger.error(f"Unexpected error during API request to {url}: {e}")
+            raise APIConnectionError(url=url, reason=f"Unexpected error: {str(e)}")
                 
     async def get_campaign_data(self, campaign_id: str) -> Dict[str, Any]:
         """
