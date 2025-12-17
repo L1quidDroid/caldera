@@ -1,13 +1,21 @@
-/* Triskele Labs Branding - Enhanced Navigation Design */
+/* Triskele Labs Branding - Official Style Guide */
+/* Maintains CALDERA's default dark theme with Triskele Labs cyan/teal accents */
 
 :root {
-    --triskele-purple: #8b5cf6;
-    --triskele-purple-light: #a78bfa;
-    --triskele-purple-dark: #7c3aed;
-    --triskele-green: #48CFA0;
-    --triskele-navy: #0a0f1a;
-    --triskele-bg-dark: #020816;
+    /* Triskele Labs Official Brand Colors */
+    --triskele-primary-dark: #020816;      /* Deep navy/blue-black */
+    --triskele-primary-accent: #48CFA0;    /* Triskele Labs teal/cyan */
+    --triskele-secondary-start: #40BB90;   /* Gradient start */
+    --triskele-secondary-end: #48CFA0;     /* Gradient end */
+    --triskele-text-dark: #1F2937;         /* Primary text */
+    --triskele-text-mid: #6B7280;          /* Secondary text */
+    
+    /* Navigation specific */
+    --triskele-navy: #0a0f1a;              /* Navigation background */
 }
+
+/* Preserve CALDERA's dark background - DO NOT override body background */
+/* This ensures login and home screens remain dark */
 
 /* Navigation - Dark theme background */
 #navigation {
@@ -23,17 +31,17 @@
     color: white !important;
 }
 
-/* Navigation icons - purple accent theme */
+/* Navigation icons - Triskele Labs teal/cyan accent */
 #expandCollapse .icon {
-    color: #8b5cf6 !important;
+    color: #48CFA0 !important;
 }
 
 #expandCollapse a {
-    color: #8b5cf6 !important;
+    color: #48CFA0 !important;
 }
 
 #navigation .menu-label-icon {
-    color: #8b5cf6 !important;
+    color: #48CFA0 !important;
 }
 
 #navigation .menu-item-icon {
@@ -42,12 +50,12 @@
 }
 
 #navigation .menu-item:hover .menu-item-icon {
-    color: #8b5cf6 !important;
+    color: #48CFA0 !important;
 }
 
 #navigation .menu-item.router-link-active .menu-item-icon,
 #navigation .menu-item.router-link-exact-active .menu-item-icon {
-    color: #8b5cf6 !important;
+    color: #48CFA0 !important;
 }
 
 /* Logo replacement */
@@ -69,88 +77,88 @@
     max-width: 50px !important;
 }
 
-/* Primary color - purple accent theme */
+/* Primary color - Triskele Labs teal/cyan accent */
 .has-background-primary,
 .button.is-primary,
 .tag.is-primary,
 .tabs.is-boxed li.is-active a,
 .tabs.is-toggle li.is-active a {
-    background-color: #8b5cf6 !important;
+    background-color: #48CFA0 !important;
     color: white !important;
 }
 
 .has-text-primary,
 .tabs li.is-active a {
-    color: #8b5cf6 !important;
+    color: #48CFA0 !important;
 }
 
 .button.is-primary:hover {
-    background-color: #7c3aed !important;
+    background-color: #40BB90 !important;
 }
 
-/* Active menu items - purple accent */
+/* Active menu items - Triskele Labs teal accent */
 .router-link-active,
 #navigation .menu-item.router-link-active,
 #navigation .menu-item.router-link-exact-active {
-    background-color: rgba(139, 92, 246, 0.15) !important;
+    background-color: rgba(72, 207, 160, 0.15) !important;
     color: white !important;
     font-weight: 500 !important;
-    border-left-color: #8b5cf6 !important;
+    border-left-color: #48CFA0 !important;
 }
 
-/* Menu items hover - subtle purple tint */
+/* Menu items hover - subtle tint */
 #navigation .menu-item:hover {
     background-color: rgba(255, 255, 255, 0.05) !important;
     color: rgba(255, 255, 255, 0.95) !important;
 }
 
-/* Links - purple accent */
+/* Links - Triskele Labs teal accent */
 a:not(.button) {
-    color: #8b5cf6 !important;
+    color: #48CFA0 !important;
 }
 
 a:not(.button):hover {
-    color: #a78bfa !important;
+    color: #40BB90 !important;
 }
 
-/* Input focus - purple accent */
+/* Input focus - Triskele Labs teal accent */
 input:focus,
 textarea:focus,
 select:focus {
-    border-color: #8b5cf6 !important;
-    box-shadow: 0 0 0 0.125em rgba(139, 92, 246, 0.25) !important;
+    border-color: #48CFA0 !important;
+    box-shadow: 0 0 0 0.125em rgba(72, 207, 160, 0.25) !important;
 }
 
-/* Checkboxes and radio buttons - purple accent */
+/* Checkboxes and radio buttons - Triskele Labs teal accent */
 input[type="checkbox"]:checked,
 input[type="radio"]:checked {
-    background-color: #8b5cf6 !important;
-    border-color: #8b5cf6 !important;
+    background-color: #48CFA0 !important;
+    border-color: #48CFA0 !important;
 }
 
-/* Progress bars - purple accent */
+/* Progress bars - Triskele Labs teal accent */
 .progress::-webkit-progress-value {
-    background-color: #8b5cf6 !important;
+    background-color: #48CFA0 !important;
 }
 
 .progress::-moz-progress-bar {
-    background-color: #8b5cf6 !important;
+    background-color: #48CFA0 !important;
 }
 
-/* Badges and tags - keep green for success states */
+/* Badges and tags - Triskele Labs teal for success states */
 .badge.is-success,
 .tag.is-success {
     background-color: #48CFA0 !important;
 }
 
-/* Tabs border - purple accent */
+/* Tabs border - Triskele Labs teal accent */
 .tabs.is-boxed li.is-active a {
-    border-color: #8b5cf6 !important;
+    border-color: #48CFA0 !important;
 }
 
-/* Switch/Toggle controls - purple accent */
+/* Switch/Toggle controls - Triskele Labs teal accent */
 .switch input[type="checkbox"]:checked + .check {
-    background-color: #8b5cf6 !important;
+    background-color: #48CFA0 !important;
 }
 
 /* Focus indicators for accessibility */

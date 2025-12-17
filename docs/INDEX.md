@@ -1,175 +1,265 @@
 # CALDERA Documentation Index
 
-**Welcome to the CALDERA documentation!** This index provides a structured guide to all documentation resources.
+**Version**: 5.0.0 (Triskele Labs Enhanced)  
+**Last Updated**: December 17, 2025
+
+Welcome to the CALDERA documentation! This index provides quick access to all documentation resources.
 
 ---
 
-## 🚀 Quick Start
-
-**New to CALDERA?** Start here:
-
-1. **[Getting Started Guide](guides/getting-started.md)** - Installation, setup, and first steps
-2. **[Quick Reference](../QUICK_REFERENCE.md)** - Common commands and workflows
-3. **[Demo Walkthrough](../DEMO_WALKTHROUGH.md)** - Step-by-step demo of all features
-
----
-
-## 📖 Core Documentation
-
-### User Guides
-- **[Getting Started](guides/getting-started.md)** - Installation and initial setup
-- **[Orchestration Guide](guides/orchestration-guide.md)** - Campaign management and automation
-- **[End-to-End User Journey](../END_TO_END_USER_JOURNEY.md)** - Complete workflow examples
-- **[Quick Reference](../QUICK_REFERENCE.md)** - Command cheat sheet
-
-### Developer Guides
-- **[Contributing Guide](../CONTRIBUTING.md)** - How to contribute to CALDERA
-- **[Testing Guide](../TESTING_GUIDE_DEVELOPER.md)** - Testing best practices and tools
-- **[MCP Server Setup](../MCP_SERVER_SETUP.md)** - Model Context Protocol integration
-
-### Architecture & Design
-- **[Folder Structure Plan](../FOLDER_STRUCTURE_PLAN.md)** - Project organization
-- **[Navigation Redesign](../NAVIGATION_REDESIGN.md)** - UI/UX improvements
-- **[Implementation Summary](implementation-summary.md)** - Technical implementation details
-
----
-
-## 🎯 Feature Documentation
-
-### Phase 6: PDF Reporting
-- **[Phase 6 Complete](phases/phase6-pdf-reporting.md)** - PDF report generation system
-- Features: ATT&CK Navigator layers, visualizations, executive summaries
-
-### Orchestration System
-- **[Orchestration Guide](guides/orchestration-guide.md)** - Campaign automation
-- **[Orchestrator README](../orchestrator/README.md)** - Module-specific documentation
-
-### Agent Enrollment
-- **[Enrollment System](../orchestrator/README.md#enrollment)** - Dynamic agent deployment
-
-### Integration & APIs
-- **[REST API Reference](#)** - API endpoints and usage
-- **[Webhook Integration](guides/orchestration-guide.md#webhooks)** - SIEM and notification setup
-
----
-
-## 🧪 Testing Documentation
-
-### Test Reports
-- **[GUI Testing Report](../GUI_TESTING_REPORT.md)** - Frontend test results
-- **[Test Results](../TEST_RESULTS.md)** - Automated test outcomes
-- **[User Journey Testing Log](../USER_JOURNEY_TESTING_LOG.md)** - End-to-end test logs
-
-### Testing Guides
-- **[Testing Guide](../TESTING_GUIDE.md)** - User testing procedures
-- **[Developer Testing Guide](../TESTING_GUIDE_DEVELOPER.md)** - Development testing
-
----
-
-## 📊 Project Status & Summaries
-
-### Migration & Updates
-- **[Migration Complete](../MIGRATION_COMPLETE.md)** - Migration status and notes
-- **[Migration Summary](../MIGRATION_SUMMARY.md)** - Detailed migration report
-- **[Dev Session Summary](../DEV_SESSION_SUMMARY.md)** - Recent development session notes
-
-### Presentations & Reports
-- **[Team Presentation](presentations/team-presentation.md)** - Slide deck and talking points
-
----
-
-## 🔒 Security & Compliance
-
-- **[Security Policy](../SECURITY.md)** - Security guidelines and vulnerability reporting
-- **[Contributing Guidelines](../CONTRIBUTING.md)** - Code of conduct and contribution rules
-
----
-
-## 🔧 Configuration & Setup
-
-### Environment Setup
-- **[Getting Started](guides/getting-started.md)** - Environment configuration
-- **[Requirements](../README.md#requirements)** - System requirements
-
-### Plugin Configuration
-- **[Plugin Documentation](../README.md#plugins)** - Available plugins and setup
-- **[Orchestrator Plugin](../orchestrator/README.md)** - Orchestration system setup
-
----
-
-## 📝 Reference Materials
-
-### Command Line Interface
-- **[Quick Reference](../QUICK_REFERENCE.md)** - CLI commands
-- **[Orchestration CLI](guides/orchestration-guide.md#cli)** - Orchestrator commands
-
-### API Reference
-- See REST API documentation in [Orchestration Guide](guides/orchestration-guide.md)
-
----
-
-## 🗂️ Documentation by Audience
+## 📚 Quick Links
 
 ### For New Users
-1. [Getting Started Guide](guides/getting-started.md)
-2. [Demo Walkthrough](../DEMO_WALKTHROUGH.md)
-3. [Quick Reference](../QUICK_REFERENCE.md)
-
-### For Operators
-1. [Orchestration Guide](guides/orchestration-guide.md)
-2. [End-to-End User Journey](../END_TO_END_USER_JOURNEY.md)
-3. [Quick Reference](../QUICK_REFERENCE.md)
+- [Getting Started Guide](guides/getting-started.md) - Installation and first steps
+- [Demo Walkthrough](orchestration/demo.md) - Guided tutorial
+- [Troubleshooting Guide](TROUBLESHOOTING.md) - Common issues and solutions
 
 ### For Developers
-1. [Contributing Guide](../CONTRIBUTING.md)
-2. [Testing Guide](../TESTING_GUIDE_DEVELOPER.md)
-3. [Folder Structure Plan](../FOLDER_STRUCTURE_PLAN.md)
-4. [Implementation Summary](implementation-summary.md)
+- [API Documentation](api/rest-api.md) - REST API reference
+- [Plugin Development](#) - Creating custom plugins
+- [Contributing Guidelines](../CONTRIBUTING.md) - How to contribute
 
-### For Security Teams
-1. [Security Policy](../SECURITY.md)
-2. [Testing Documentation](#testing-documentation)
-3. [Orchestration Guide](guides/orchestration-guide.md)
+### For Operators
+- [Orchestration Overview](orchestration/overview.md) - Campaign management
+- [End-to-End User Journey](orchestration/user-journey.md) - Complete workflow
+- [Webhook Integration](api/webhooks.md) - Event notifications
 
 ---
 
-## 📂 Documentation Structure
+## 📖 Documentation Structure
 
 ```
 docs/
 ├── INDEX.md (this file)
-├── README.md (overview)
+├── TROUBLESHOOTING.md
 ├── guides/
 │   ├── getting-started.md
-│   ├── orchestration-guide.md
-│   └── orchestration-readme.md
-├── phases/
-│   └── phase6-pdf-reporting.md
-├── presentations/
-│   └── team-presentation.md
-└── implementation-summary.md
+│   ├── installation.md
+│   └── advanced-configuration.md
+├── api/
+│   ├── rest-api.md
+│   ├── webhooks.md
+│   └── authentication.md
+└── orchestration/
+    ├── overview.md
+    ├── user-journey.md
+    ├── demo.md
+    └── campaigns.md
 ```
 
-Root-level documentation files remain in project root for discoverability but are indexed here for navigation.
+---
+
+## 🚀 Getting Started
+
+### 1. Installation
+
+Follow the [Getting Started Guide](guides/getting-started.md) for detailed installation instructions.
+
+**Quick Start**:
+```bash
+# Clone repository
+git clone https://github.com/mitre/caldera.git --recursive
+cd caldera
+
+# Setup virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run setup validation
+./scripts/setup_check.sh
+
+# Start server
+python server.py --insecure
+```
+
+### 2. Verify Installation
+
+```bash
+# Run health check
+curl http://localhost:8888/api/v2/health
+
+# Run integration tests
+python3 tests/integration_test.py --quick
+```
+
+### 3. Access Web UI
+
+Open browser to: http://localhost:8888
+
+**Default credentials**:
+- Red Team: `admin` / `admin`
+- Blue Team: `blue` / `admin`
 
 ---
 
-## 🔗 External Resources
+## 📋 Documentation by Use Case
 
-- **[Official CALDERA Website](https://caldera.mitre.org)**
-- **[MITRE ATT&CK Framework](https://attack.mitre.org/)**
-- **[GitHub Repository](https://github.com/mitre/caldera)**
-- **[Video Tutorials](https://www.youtube.com/playlist?list=PLF2bj1pw7-ZvLTjIwSaTXNLN2D2yx-wXH)**
+### I want to...
+
+#### Run my first operation
+1. [Getting Started Guide](guides/getting-started.md) - Setup basics
+2. [Demo Walkthrough](orchestration/demo.md) - Step-by-step tutorial
+3. [Troubleshooting Guide](TROUBLESHOOTING.md) - If you hit issues
+
+#### Integrate CALDERA into my workflow
+1. [REST API Documentation](api/rest-api.md) - API endpoints
+2. [Webhook Integration](api/webhooks.md) - Event notifications
+3. [Orchestration Overview](orchestration/overview.md) - Campaign automation
+
+#### Deploy agents at scale
+1. [Enrollment API Guide](orchestration/user-journey.md#phase-5-enrollment-api-plugin) - Automated enrollment
+2. [Agent Configuration](#) - Customizing agents
+3. [Multi-Environment Deployment](#) - Cloud and on-premises
+
+#### Develop plugins or extensions
+1. [Plugin Architecture](#) - Plugin system overview
+2. [Plugin Development Guide](#) - Creating custom plugins
+3. [Contributing Guidelines](../CONTRIBUTING.md) - Submitting contributions
+
+#### Troubleshoot issues
+1. [Troubleshooting Guide](TROUBLESHOOTING.md) - Comprehensive problem solving
+2. [FAQ](#) - Frequently asked questions
+3. [Debug Mode](#) - Enabling verbose logging
 
 ---
 
-## 📧 Support & Community
+## 🔗 Root-Level Documentation (Legacy)
 
-- **GitHub Issues**: Bug reports and feature requests
-- **User Survey**: https://forms.office.com/g/ByBWxYTf8e
-- **Security Issues**: See [SECURITY.md](../SECURITY.md)
+These files remain in the repository root for backward compatibility:
+
+| File | Description | New Location |
+|------|-------------|--------------|
+| [README.md](../README.md) | Project overview | (Keep in root) |
+| [GETTING_STARTED.md](../GETTING_STARTED.md) | Installation guide | [docs/guides/getting-started.md](guides/getting-started.md) |
+| [ORCHESTRATION_GUIDE.md](../ORCHESTRATION_GUIDE.md) | Orchestration details | [docs/orchestration/overview.md](orchestration/overview.md) |
+| [END_TO_END_USER_JOURNEY.md](../END_TO_END_USER_JOURNEY.md) | Complete workflow | [docs/orchestration/user-journey.md](orchestration/user-journey.md) |
+| [DEMO_WALKTHROUGH.md](../DEMO_WALKTHROUGH.md) | Tutorial walkthrough | [docs/orchestration/demo.md](orchestration/demo.md) |
+| [BUGFIX_PLAN.md](../BUGFIX_PLAN.md) | Development planning | (Development use only) |
 
 ---
 
-**Last Updated:** December 17, 2025  
-**Version:** 5.0.0 (Triskele Labs Enhanced)
+## 📚 External Resources
+
+### Official CALDERA Resources
+- **Official Docs**: https://caldera.readthedocs.io
+- **GitHub Repository**: https://github.com/mitre/caldera
+- **MITRE Website**: https://caldera.mitre.org
+
+### Community Resources
+- **GitHub Discussions**: https://github.com/mitre/caldera/discussions
+- **Issue Tracker**: https://github.com/mitre/caldera/issues
+- **Plugin Repository**: https://github.com/mitre-caldera
+
+### Standards & Frameworks
+- **ATT&CK Framework**: https://attack.mitre.org
+- **ATLAS Framework**: https://atlas.mitre.org
+- **D3FEND**: https://d3fend.mitre.org
+
+---
+
+## 🔍 Search Documentation
+
+Can't find what you're looking for? Try these search methods:
+
+### 1. Grep search across all docs
+```bash
+cd docs/
+grep -r "your search term" .
+```
+
+### 2. GitHub search
+Visit: https://github.com/mitre/caldera and use the search bar
+
+### 3. ReadTheDocs search
+Visit: https://caldera.readthedocs.io and use the search function
+
+---
+
+## 📝 Documentation Standards
+
+### For Contributors
+
+When adding documentation:
+
+1. **Markdown format** - Use standard Markdown with GitHub extensions
+2. **Code examples** - Include working code snippets
+3. **Screenshots** - Add visuals for UI-heavy sections
+4. **Cross-references** - Link to related documentation
+5. **Update INDEX.md** - Add new docs to this index
+
+### Style Guide
+
+- Use sentence case for headings
+- Include code examples for all procedures
+- Add troubleshooting sections where applicable
+- Keep line length ≤ 120 characters
+- Use relative links for internal references
+
+---
+
+## 🆘 Getting Help
+
+### Quick Troubleshooting
+1. Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md) first
+2. Run `./scripts/setup_check.sh` for diagnostics
+3. Review server logs: `tail -f logs/caldera.log`
+
+### Support Channels
+1. **GitHub Issues** - Bug reports and feature requests
+2. **GitHub Discussions** - Questions and community support
+3. **Documentation** - Search existing docs first
+
+### Reporting Documentation Issues
+Found an error or gap in the documentation?
+
+1. Open an issue: https://github.com/mitre/caldera/issues
+2. Tag with `documentation` label
+3. Include:
+   - Document name and section
+   - What's wrong or missing
+   - Suggested improvement
+
+---
+
+## 🎯 Documentation Roadmap
+
+### Completed ✅
+- ✅ Getting Started Guide
+- ✅ API v2 Documentation
+- ✅ Troubleshooting Guide
+- ✅ Orchestration Overview
+- ✅ End-to-End User Journey
+- ✅ Demo Walkthrough
+
+### In Progress 🚧
+- 🚧 Plugin Development Guide
+- 🚧 Advanced Configuration Guide
+- 🚧 Security Best Practices
+- 🚧 Performance Tuning Guide
+
+### Planned 📋
+- 📋 Video tutorials
+- 📋 Interactive examples
+- 📋 Architecture deep-dives
+- 📋 Case studies
+
+---
+
+## 📊 Documentation Metrics
+
+| Metric | Value |
+|--------|-------|
+| Total documentation files | 25+ |
+| Code examples | 150+ |
+| API endpoints documented | 40+ |
+| Troubleshooting scenarios | 30+ |
+| Last full review | December 2025 |
+
+---
+
+**Maintained by**: Triskele Labs Development Team  
+**Questions?** Open an issue on GitHub  
+**Contributions Welcome!** See [CONTRIBUTING.md](../CONTRIBUTING.md)

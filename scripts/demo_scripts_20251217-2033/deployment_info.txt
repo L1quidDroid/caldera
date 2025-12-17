@@ -1,0 +1,42 @@
+CALDERA Purple Team Demo Deployment
+====================================
+Date: Wed Dec 17 20:33:41 AEDT 2025
+Resource Group: rg-caldera-demo-20251217-2023
+Location: australiaeast
+
+CALDERA Server:
+  Public IP: 68.218.11.202
+  Private IP: 10.0.1.4
+  SSH: ssh tonyto@68.218.11.202
+  
+Red Agent (Windows):
+  Public IP: 4.197.211.5
+  Private IP: 10.0.1.5
+  RDP: mstsc /v:4.197.211.5
+  Username: tonyto
+  Password: P@ssw0rd123!
+  
+Blue Agent (Linux):
+  Public IP: 68.218.20.72
+  Private IP: 10.0.1.6
+  SSH: ssh tonyto@68.218.20.72
+
+CALDERA URLs:
+  Web UI: http://68.218.11.202:8888
+  API: http://68.218.11.202:8888/api/v2
+  Credentials: admin/admin or blue/admin
+  
+Kibana URL:
+  Dashboard: http://68.218.11.202:5601
+  
+Elasticsearch URL:
+  API: http://68.218.11.202:9200
+
+Next Steps:
+  1. Run: bash caldera_server_setup.sh (on CALDERA server)
+  2. Run: deploy_red_agent.ps1 (on Windows VM)
+  3. Run: bash deploy_blue_agent.sh (on Linux VM)
+  4. Validate: ./demo_validation.sh 68.218.11.202
+  
+Cleanup:
+  Run: bash cleanup_demo.sh

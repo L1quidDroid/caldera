@@ -37,6 +37,35 @@ This guide provides the complete end-to-end workflow. Some steps may need adjust
 
 This guide walks through the complete user journey from initial setup to running a full adversary emulation campaign using the Global Orchestration Pattern with all Phase 1-5 features.
 
+### Workflow Visualization
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant CLI as Orchestrator CLI
+    participant Server as CALDERA Server
+    participant Agent as Sandcat Agent
+    participant Webhook as External System
+    
+    User->>Server: 1. Start CALDERA
+    User->>CLI: 2. Define Campaign (YAML)
+    User->>CLI: 3. Register Webhook
+    CLI->>Server: POST /plugin/orchestrator/webhooks
+    User->>CLI: 4. Create Enrollment
+    CLI->>Server: POST /plugin/enrollment/enroll
+    Server-->>User: Bootstrap Command
+    User->>Agent: 5. Execute Bootstrap
+    Agent->>Server: Beacon (C2 Connection)
+    User->>CLI: 6. Run Campaign
+    CLI->>Server: Create Operation
+    Server->>Agent: Execute Abilities
+    Agent-->>Server: Results
+    Server->>Webhook: Event Notifications
+    CLI->>User: 7. Generate Report
+    
+    Note over User,Webhook: Complete Campaign Lifecycle
+```
+
 ---
 
 ## Prerequisites

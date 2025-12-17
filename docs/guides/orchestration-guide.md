@@ -10,6 +10,57 @@ This implementation provides a comprehensive global orchestration pattern for MI
 
 ## Architecture
 
+### System Architecture Diagram
+
+```mermaid
+graph TB
+    subgraph "Campaign Definition"
+        A[YAML Campaign Spec]
+    end
+    
+    subgraph "Orchestration Layer"
+        B[Orchestrator CLI]
+        C[Campaign Manager]
+        D[Webhook Publisher]
+    end
+    
+    subgraph "CALDERA Core"
+        E[REST API v2]
+        F[Operation Engine]
+        G[Agent C2]
+    end
+    
+    subgraph "External Integrations"
+        H[SIEM Systems]
+        I[Notification Services]
+        J[Cloud APIs]
+    end
+    
+    subgraph "Outputs"
+        K[PDF Reports]
+        L[JSON Results]
+        M[Event Logs]
+    end
+    
+    A --> B
+    B --> C
+    C --> E
+    C --> D
+    E --> F
+    F --> G
+    D --> H
+    D --> I
+    C --> J
+    F --> K
+    F --> L
+    G --> M
+    
+    style A fill:#e1f5ff
+    style B fill:#fff3cd
+    style E fill:#d4edda
+    style K fill:#d1ecf1
+```
+
 ### Core Components
 
 ```

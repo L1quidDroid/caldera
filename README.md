@@ -16,6 +16,26 @@ The framework consists of two components:
 an asynchronous command-and-control (C2) server with a REST API and a web interface.
 2) **Plugins**. These repositories expand the core framework capabilities and providing additional functionality. Examples include agents, reporting, collections of TTPs and more.
 
+## Quick Start Flowchart
+
+```mermaid
+flowchart TD
+    A[Install CALDERA] --> B{Run Setup Check}
+    B -->|Pass| C[Start Server]
+    B -->|Fail| D[Fix Dependencies]
+    D --> B
+    C --> E[Access Web UI]
+    E --> F[Deploy Agent]
+    F --> G[Create Operation]
+    G --> H[Execute & Monitor]
+    H --> I[Review Results]
+    
+    style A fill:#e1f5ff
+    style C fill:#d4edda
+    style G fill:#fff3cd
+    style I fill:#d1ecf1
+```
+
 ## Resources & Socials
 * 📜 [Documentation, training, and use-cases](https://caldera.readthedocs.io/en/latest/)
 * 🎬 [Tutorial Videos](https://www.youtube.com/playlist?list=PLF2bj1pw7-ZvLTjIwSaTXNLN2D2yx-wXH)
