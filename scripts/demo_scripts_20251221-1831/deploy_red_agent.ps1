@@ -5,7 +5,7 @@
 
 $ErrorActionPreference = "Stop"
 
-$CALDERA_SERVER = "68.218.0.170"
+$CALDERA_SERVER = "4.196.84.144"
 $SERVER_URL = "http://$CALDERA_SERVER:8888"
 $GROUP = "red"
 
