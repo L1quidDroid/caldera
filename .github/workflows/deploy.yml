@@ -1,0 +1,279 @@
+name: Deploy CALDERA Purple Team Lab
+
+on:
+  push:
+    branches: [main, master, develop]
+    paths:
+      - 'bicep/**'
+      - '.github/workflows/deploy.yml'
+      - 'scripts/**'
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - dev
+          - stage
+          - prod-lab
+      enableAtomicRedTeam:
+        description: 'Enable Atomic Red Team auto-execution'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+  security-events: write
+
+env:
+  AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  LOCATION: 'australiaeast'
+
+jobs:
+  # ============================================================================
+  # SECURITY SCANNING
+  # ============================================================================
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Checkov (IaC security scan)
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: bicep/
+          framework: bicep
+          output_format: sarif
+          output_file_path: checkov-results.sarif
+          soft_fail: true
+          skip_check: CKV_AZURE_50
+
+      - name: Upload Checkov results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: checkov-results.sarif
+
+  # ============================================================================
+  # VALIDATE BICEP
+  # ============================================================================
+  validate:
+    name: Validate & Plan
+    runs-on: ubuntu-latest
+    needs: security-scan
+    environment:
+      name: ${{ github.event.inputs.environment || 'dev' }}
+    outputs:
+      deployment-id: ${{ steps.set-deployment-id.outputs.deployment-id }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set deployment ID
+        id: set-deployment-id
+        run: echo "deployment-id=$(date +%Y%m%d-%H%M)" >> $GITHUB_OUTPUT
+
+      - name: Validate Bicep syntax
+        run: |
+          az bicep build --file bicep/main.bicep
+          az bicep lint --file bicep/main.bicep
+
+      - name: Run What-If analysis
+        id: whatif
+        run: |
+          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          DEPLOYMENT_ID="${{ steps.set-deployment-id.outputs.deployment-id }}"
+          
+          az deployment sub what-if \
+            --name "caldera-${ENV}-${DEPLOYMENT_ID}" \
+            --location ${{ env.LOCATION }} \
+            --template-file bicep/main.bicep \
+            --parameters bicep/parameters/${ENV}.parameters.json \
+            --parameters deploymentId=${DEPLOYMENT_ID} \
+            --parameters adminUsername=${{ secrets.ADMIN_USERNAME }} \
+            --parameters adminPassword=${{ secrets.ADMIN_PASSWORD }} \
+            --parameters sshPublicKey="${{ secrets.SSH_PUBLIC_KEY }}"
+
+  # ============================================================================
+  # DEPLOY INFRASTRUCTURE
+  # ============================================================================
+  deploy:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/master'
+    environment:
+      name: ${{ github.event.inputs.environment || 'dev' }}
+    outputs:
+      resource-group: ${{ steps.deploy.outputs.resource-group }}
+      caldera-url: ${{ steps.deploy.outputs.caldera-url }}
+      kibana-url: ${{ steps.deploy.outputs.kibana-url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Bicep template
+        id: deploy
+        run: |
+          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          DEPLOYMENT_ID="${{ needs.validate.outputs.deployment-id }}"
+          ENABLE_ATOMIC="${{ github.event.inputs.enableAtomicRedTeam || 'false' }}"
+          
+          DEPLOYMENT_OUTPUT=$(az deployment sub create \
+            --name "caldera-${ENV}-${DEPLOYMENT_ID}" \
+            --location ${{ env.LOCATION }} \
+            --template-file bicep/main.bicep \
+            --parameters bicep/parameters/${ENV}.parameters.json \
+            --parameters deploymentId=${DEPLOYMENT_ID} \
+            --parameters environment=${ENV} \
+            --parameters adminUsername=${{ secrets.ADMIN_USERNAME }} \
+            --parameters adminPassword=${{ secrets.ADMIN_PASSWORD }} \
+            --parameters sshPublicKey="${{ secrets.SSH_PUBLIC_KEY }}" \
+            --parameters enableAtomicRedTeam=${ENABLE_ATOMIC} \
+            --output json)
+          
+          echo "$DEPLOYMENT_OUTPUT" | jq '.properties.outputs'
+          
+          RG_NAME=$(echo "$DEPLOYMENT_OUTPUT" | jq -r '.properties.outputs.resourceGroupName.value')
+          CALDERA_URL=$(echo "$DEPLOYMENT_OUTPUT" | jq -r '.properties.outputs.calderaServerUrl.value')
+          KIBANA_URL=$(echo "$DEPLOYMENT_OUTPUT" | jq -r '.properties.outputs.elkKibanaUrl.value')
+          
+          echo "resource-group=$RG_NAME" >> $GITHUB_OUTPUT
+          echo "caldera-url=$CALDERA_URL" >> $GITHUB_OUTPUT
+          echo "kibana-url=$KIBANA_URL" >> $GITHUB_OUTPUT
+          
+          echo "$DEPLOYMENT_OUTPUT" > deployment-outputs.json
+
+      - name: Upload deployment artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-outputs
+          path: deployment-outputs.json
+          retention-days: 30
+
+  # ============================================================================
+  # VALIDATE DEPLOYMENT
+  # ============================================================================
+  validate-deployment:
+    name: Validate Deployment
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download deployment outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-outputs
+
+      - name: Health check - CALDERA
+        shell: pwsh
+        run: |
+          $outputs = Get-Content deployment-outputs.json | ConvertFrom-Json
+          $calderaUrl = $outputs.properties.outputs.calderaServerUrl.value
+          
+          $maxRetries = 20
+          $retryCount = 0
+          $healthy = $false
+          
+          while ($retryCount -lt $maxRetries -and -not $healthy) {
+            try {
+              $response = Invoke-WebRequest -Uri $calderaUrl -UseBasicParsing -TimeoutSec 10
+              if ($response.StatusCode -eq 200) {
+                Write-Host "✅ CALDERA is healthy"
+                $healthy = $true
+              }
+            } catch {
+              Write-Host "⏳ Waiting for CALDERA (attempt $($retryCount + 1)/$maxRetries)..."
+              Start-Sleep -Seconds 30
+              $retryCount++
+            }
+          }
+          
+          if (-not $healthy) {
+            Write-Error "❌ CALDERA health check failed"
+            exit 1
+          }
+
+      - name: Health check - ELK Stack
+        shell: pwsh
+        run: |
+          $outputs = Get-Content deployment-outputs.json | ConvertFrom-Json
+          $elkUrl = $outputs.properties.outputs.elkElasticsearchUrl.value
+          
+          $maxRetries = 10
+          for ($i = 0; $i -lt $maxRetries; $i++) {
+            try {
+              $response = Invoke-RestMethod -Uri "$elkUrl/_cluster/health" -Method Get
+              if ($response.status -in @('green', 'yellow')) {
+                Write-Host "✅ Elasticsearch is healthy (status: $($response.status))"
+                exit 0
+              }
+            } catch {
+              Write-Host "⏳ Waiting for Elasticsearch (attempt $($i + 1)/$maxRetries)..."
+              Start-Sleep -Seconds 30
+            }
+          }
+          
+          Write-Warning "⚠️ Elasticsearch health check timeout"
+
+  # ============================================================================
+  # DEPLOYMENT SUMMARY
+  # ============================================================================
+  summary:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [deploy, validate-deployment]
+    if: always()
+    steps:
+      - name: Download deployment outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-outputs
+
+      - name: Generate summary
+        run: |
+          cat deployment-outputs.json | jq -r '.properties.outputs.accessInstructions.value' > access-instructions.json
+          
+          echo "## 🚀 CALDERA Purple Team Lab Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Access Points" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          CALDERA_URL=$(jq -r '.caldera.url' access-instructions.json)
+          KIBANA_URL=$(jq -r '.kibana.url' access-instructions.json)
+          WINDOWS_IP=$(jq -r '.agents.windows.ip' access-instructions.json)
+          LINUX_IP=$(jq -r '.agents.linux.ip' access-instructions.json)
+          
+          echo "- **CALDERA**: [$CALDERA_URL]($CALDERA_URL) (admin/admin)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Kibana**: [$KIBANA_URL]($KIBANA_URL)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Windows Agent**: $WINDOWS_IP (RDP)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Linux Agent**: $LINUX_IP (SSH)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Details" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ github.event.inputs.environment || 'dev' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Resource Group**: ${{ needs.deploy.outputs.resource-group }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployment ID**: ${{ needs.validate.outputs.deployment-id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Region**: ${{ env.LOCATION }}" >> $GITHUB_STEP_SUMMARY

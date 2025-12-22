@@ -1,0 +1,289 @@
+name: Destroy CALDERA Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to destroy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - stage
+          - prod-lab
+      confirmation:
+        description: 'Type "DESTROY" to confirm'
+        required: true
+        type: string
+      deleteSnapshots:
+        description: 'Delete VM snapshots as well'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  validate-confirmation:
+    name: Validate Destruction Confirmation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate confirmation text
+        run: |
+          if [ "${{ github.event.inputs.confirmation }}" != "DESTROY" ]; then
+            echo "❌ Confirmation text must be exactly 'DESTROY'"
+            echo "Received: ${{ github.event.inputs.confirmation }}"
+            exit 1
+          fi
+          echo "✅ Confirmation validated"
+
+      - name: Require manual approval for production
+        if: github.event.inputs.environment == 'prod-lab'
+        run: |
+          echo "⚠️  Production environment requires additional approval"
+          echo "Ensure you have obtained approval from infrastructure team"
+
+  create-backup-snapshot:
+    name: Create Final Backup Snapshot
+    runs-on: ubuntu-latest
+    needs: validate-confirmation
+    steps:
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set environment variables
+        run: |
+          echo "RESOURCE_GROUP=rg-caldera-${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+          echo "TIMESTAMP=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
+
+      - name: Check if resource group exists
+        id: check-rg
+        run: |
+          if az group exists --name ${{ env.RESOURCE_GROUP }}; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✅ Resource group found: ${{ env.RESOURCE_GROUP }}"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️  Resource group not found: ${{ env.RESOURCE_GROUP }}"
+          fi
+
+      - name: Create final backup snapshots
+        if: steps.check-rg.outputs.exists == 'true'
+        run: |
+          echo "Creating final backup snapshots before destruction..."
+          
+          VMS=$(az vm list --resource-group ${{ env.RESOURCE_GROUP }} --query "[].name" -o tsv)
+          
+          if [ -z "$VMS" ]; then
+            echo "No VMs found in resource group"
+            exit 0
+          fi
+          
+          for VM_NAME in $VMS; do
+            echo "Processing VM: $VM_NAME"
+            
+            # Get OS disk ID
+            OS_DISK_ID=$(az vm show --resource-group ${{ env.RESOURCE_GROUP }} --name $VM_NAME --query "storageProfile.osDisk.managedDisk.id" -o tsv)
+            
+            if [ -z "$OS_DISK_ID" ]; then
+              echo "⚠️  No OS disk found for $VM_NAME"
+              continue
+            fi
+            
+            SNAPSHOT_NAME="final-backup-${VM_NAME}-${{ env.TIMESTAMP }}"
+            LOCATION=$(az vm show --resource-group ${{ env.RESOURCE_GROUP }} --name $VM_NAME --query "location" -o tsv)
+            
+            echo "Creating snapshot: $SNAPSHOT_NAME"
+            az snapshot create \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --name $SNAPSHOT_NAME \
+              --source $OS_DISK_ID \
+              --location $LOCATION \
+              --tags "purpose=final-backup" "destroyed=$(date -u +%Y-%m-%dT%H:%M:%SZ)" "environment=${{ github.event.inputs.environment }}"
+            
+            echo "✅ Snapshot created: $SNAPSHOT_NAME"
+          done
+
+      - name: Export resource list
+        if: steps.check-rg.outputs.exists == 'true'
+        run: |
+          echo "Exporting resource inventory..."
+          az resource list --resource-group ${{ env.RESOURCE_GROUP }} --output json > resource-inventory-${{ env.TIMESTAMP }}.json
+          echo "Resource count: $(az resource list --resource-group ${{ env.RESOURCE_GROUP }} --query "length(@)")"
+
+      - name: Upload resource inventory
+        if: steps.check-rg.outputs.exists == 'true'
+        uses: actions/upload-artifact@v3
+        with:
+          name: resource-inventory-${{ github.event.inputs.environment }}-${{ env.TIMESTAMP }}
+          path: resource-inventory-${{ env.TIMESTAMP }}.json
+          retention-days: 90
+
+  destroy-infrastructure:
+    name: Destroy Infrastructure
+    runs-on: ubuntu-latest
+    needs: create-backup-snapshot
+    environment:
+      name: ${{ github.event.inputs.environment }}-destroy
+    steps:
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set environment variables
+        run: |
+          echo "RESOURCE_GROUP=rg-caldera-${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+
+      - name: Stop all VMs
+        run: |
+          echo "Stopping all VMs in resource group..."
+          
+          VMS=$(az vm list --resource-group ${{ env.RESOURCE_GROUP }} --query "[].name" -o tsv)
+          
+          if [ -z "$VMS" ]; then
+            echo "No VMs found to stop"
+          else
+            for VM_NAME in $VMS; do
+              echo "Stopping VM: $VM_NAME"
+              az vm stop --resource-group ${{ env.RESOURCE_GROUP }} --name $VM_NAME --no-wait
+            done
+            
+            echo "Waiting for all VMs to stop..."
+            sleep 30
+            echo "✅ All VMs stopped"
+          fi
+
+      - name: Delete resource group
+        run: |
+          echo "Deleting resource group: ${{ env.RESOURCE_GROUP }}"
+          echo "This will delete:"
+          echo "  - All VMs (CALDERA server, ELK server, Windows/Linux agents)"
+          echo "  - All managed disks"
+          echo "  - All network resources (VNet, NSGs, NICs, Public IPs)"
+          echo "  - Log Analytics workspace"
+          echo ""
+          
+          az group delete \
+            --name ${{ env.RESOURCE_GROUP }} \
+            --yes \
+            --no-wait
+          
+          echo "✅ Resource group deletion initiated"
+          echo "Monitoring deletion progress..."
+          
+          # Wait for deletion to complete (timeout after 30 minutes)
+          TIMEOUT=1800
+          ELAPSED=0
+          INTERVAL=30
+          
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            if ! az group exists --name ${{ env.RESOURCE_GROUP }}; then
+              echo "✅ Resource group deleted successfully"
+              exit 0
+            fi
+            
+            echo "Deletion in progress... (${ELAPSED}s elapsed)"
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+          
+          echo "⚠️  Resource group deletion timeout after ${TIMEOUT}s"
+          echo "Deletion may still be in progress. Check Azure Portal for status."
+
+  cleanup-snapshots:
+    name: Cleanup Snapshots (Optional)
+    runs-on: ubuntu-latest
+    needs: destroy-infrastructure
+    if: github.event.inputs.deleteSnapshots == 'true'
+    steps:
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set environment variables
+        run: |
+          echo "RESOURCE_GROUP=rg-caldera-${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+
+      - name: Delete snapshots
+        run: |
+          echo "Deleting snapshots for resource group: ${{ env.RESOURCE_GROUP }}"
+          
+          SNAPSHOTS=$(az snapshot list --resource-group ${{ env.RESOURCE_GROUP }} --query "[].name" -o tsv 2>/dev/null || echo "")
+          
+          if [ -z "$SNAPSHOTS" ]; then
+            echo "No snapshots found (resource group may already be deleted)"
+            exit 0
+          fi
+          
+          for SNAPSHOT_NAME in $SNAPSHOTS; do
+            echo "Deleting snapshot: $SNAPSHOT_NAME"
+            az snapshot delete --resource-group ${{ env.RESOURCE_GROUP }} --name $SNAPSHOT_NAME --yes
+          done
+          
+          echo "✅ All snapshots deleted"
+
+  summary:
+    name: Destruction Summary
+    runs-on: ubuntu-latest
+    needs: [destroy-infrastructure, cleanup-snapshots]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# 🗑️ Infrastructure Destruction Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "## Destroyed Resources" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Resource Group: rg-caldera-${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ All VMs (CALDERA, ELK, Agents)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ All managed disks" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Network resources (VNet, NSGs, NICs, Public IPs)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Log Analytics workspace" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ github.event.inputs.deleteSnapshots }}" == "true" ]; then
+            echo "- ✅ All snapshots deleted" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ℹ️  Snapshots retained for recovery" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Backup Information" >> $GITHUB_STEP_SUMMARY
+          echo "Final backup snapshots were created before destruction." >> $GITHUB_STEP_SUMMARY
+          echo "Check workflow artifacts for resource inventory." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "## Recovery Instructions" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ github.event.inputs.deleteSnapshots }}" == "true" ]; then
+            echo "⚠️  **WARNING:** Snapshots were deleted. Recovery is not possible." >> $GITHUB_STEP_SUMMARY
+            echo "To restore this environment, run the deployment workflow again." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "To restore from snapshots:" >> $GITHUB_STEP_SUMMARY
+            echo '```powershell' >> $GITHUB_STEP_SUMMARY
+            echo ".\scripts\rollback\rollback-deployment.ps1 -ResourceGroup 'rg-caldera-${{ github.event.inputs.environment }}' -RestoreFromSnapshots" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "*Destruction completed at $(date -u +%Y-%m-%dT%H:%M:%SZ)*" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify completion
+        run: |
+          echo "✅ Infrastructure destruction complete for environment: ${{ github.event.inputs.environment }}"
+          echo "Resource group rg-caldera-${{ github.event.inputs.environment }} has been deleted"
