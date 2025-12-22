@@ -12,6 +12,7 @@ param adminUsername string
 param adminPassword string
 param subnetId string
 param calderaServerIp string
+param elkServerIp string
 param logAnalyticsWorkspaceId string
 param enableAtomicRedTeam bool = false
 param tags object
@@ -82,11 +83,10 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-07-01' = {
     diagnosticsProfile: { bootDiagnostics: { enabled: true } }
   }
 }
-
-// Custom Script Extension - Install Sandcat agent
+// Custom Script Extension - Install Sandcat agent and Winlogbeat
 resource vmExtension 'Microsoft.Compute/virtualMachines/extensions@2023-07-01' = {
   parent: vm
-  name: 'install-caldera-agent'
+  name: 'install-caldera-agent-winlogbeat'
   location: location
   properties: {
     publisher: 'Microsoft.Compute'
@@ -94,7 +94,10 @@ resource vmExtension 'Microsoft.Compute/virtualMachines/extensions@2023-07-01' =
     typeHandlerVersion: '1.10'
     autoUpgradeMinorVersion: true
     settings: {
-      commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -Command "$calderaUrl = \'http://${calderaServerIp}:8888\'; $sandcatUrl = \"$calderaUrl/file/download\"; $agentPath = \"$env:TEMP\\sandcat.exe\"; Invoke-WebRequest -Uri $sandcatUrl -OutFile $agentPath -UseBasicParsing; Start-Process -FilePath $agentPath -ArgumentList \'-server\',\'${calderaServerIp}:8888\',\'-group\',\'red\',\'-v\' -WindowStyle Hidden; Write-Host \'Sandcat agent started\'"'
+      fileUris: [
+        'https://raw.githubusercontent.com/L1quidDroid/caldera/main/bicep/scripts/install-windows-agent.ps1'
+      ]
+      commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File install-windows-agent.ps1 -calderaServerIp ${calderaServerIp} -elkServerIp ${elkServerIp}'
     }
   }
 }

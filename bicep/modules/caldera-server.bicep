@@ -125,12 +125,15 @@ resource vmExtension 'Microsoft.Compute/virtualMachines/extensions@2023-07-01' =
   name: 'caldera-setup'
   location: location
   properties: {
-    publisher: 'Microsoft.Azure.Extensions'
-    type: 'CustomScript'
-    typeHandlerVersion: '2.1'
+    publisher: 'Microsoft.Compute'
+    type: 'CustomScriptExtension'
+    typeHandlerVersion: '1.10'
     autoUpgradeMinorVersion: true
     settings: {
-      commandToExecute: 'bash -c "$(cat <<\'SETUP_SCRIPT\'\n#!/bin/bash\nset -euo pipefail\n\n# Setup logging\nLOG_FILE=/var/log/caldera-setup.log\nexec 1> >(tee -a \"$LOG_FILE\")\nexec 2>&1\n\necho \"[$(date)] Starting CALDERA setup...\"\n\n# Install dependencies\nexport DEBIAN_FRONTEND=noninteractive\napt-get update -qq\napt-get install -y python3-venv python3-pip python3-dev build-essential git curl -qq\n\n# Install Node.js 20.x (for Magma build)\necho \"[$(date)] Installing Node.js 20.x...\"\ncurl -fsSL https://deb.nodesource.com/setup_20.x | bash -\napt-get install -y nodejs -qq\nnode --version\nnpm --version\n\n# Clone CALDERA\necho \"[$(date)] Cloning CALDERA repository...\"\ncd /home/${adminUsername}\nif [ ! -d \"caldera\" ]; then\n  git clone https://github.com/mitre/caldera.git --recursive --branch master\nfi\ncd caldera\n\n# Create virtual environment\necho \"[$(date)] Creating Python virtual environment...\"\npython3 -m venv caldera_venv\nsource caldera_venv/bin/activate\npip install --upgrade pip setuptools wheel --quiet\necho \"[$(date)] Installing Python requirements...\"\npip install -r requirements.txt --quiet\ndeactivate\n\n# Build Magma frontend (CRITICAL - prevents FileNotFoundError)\necho \"[$(date)] Building Magma frontend...\"\ncd plugins/magma\nnpm install --quiet\ntimeout 300 npm run build || { echo \"Magma build failed\"; exit 1; }\nif [ -d \"dist\" ]; then\n  echo \"[$(date)] Magma dist/ created successfully ($(du -sh dist | cut -f1))\"\nelse\n  echo \"ERROR: Magma dist/ not found after build\"\n  exit 1\nfi\n\n# Configure CALDERA\necho \"[$(date)] Configuring CALDERA...\"\ncd /home/${adminUsername}/caldera\ncat > conf/local.yml << \"EOF\"\nhost: 0.0.0.0\nplugins:\n  - access\n  - atomic\n  - compass\n  - fieldmanual\n  - gameboard\n  - magma\n  - manx\n  - response\n  - sandcat\n  - stockpile\n  - training\nusers:\n  red:\n    red: admin\n  blue:\n    blue: admin\nEOF\n\n# Create systemd service\necho \"[$(date)] Creating systemd service...\"\ncat > /etc/systemd/system/caldera.service << EOF\n[Unit]\nDescription=CALDERA Adversary Emulation Platform\nAfter=network.target\nWants=network-online.target\n\n[Service]\nType=simple\nUser=${adminUsername}\nWorkingDirectory=/home/${adminUsername}/caldera\nExecStart=/home/${adminUsername}/caldera/caldera_venv/bin/python /home/${adminUsername}/caldera/server.py --insecure\nRestart=always\nRestartSec=10\nStandardOutput=journal\nStandardError=journal\n\n[Install]\nWantedBy=multi-user.target\nEOF\n\n# Set permissions\nchown -R ${adminUsername}:${adminUsername} /home/${adminUsername}/caldera\n\n# Enable and start service\necho \"[$(date)] Starting CALDERA service...\"\nsystemctl daemon-reload\nsystemctl enable caldera\nsystemctl start caldera\n\n# Wait for startup\nsleep 20\n\n# Verify health\nif curl -sf http://localhost:8888 > /dev/null; then\n  echo \"[$(date)] ✅ CALDERA setup complete - service healthy\"\n  systemctl status caldera --no-pager\nelse\n  echo \"[$(date)] ❌ CALDERA setup failed - service not responding\"\n  systemctl status caldera --no-pager\n  journalctl -u caldera -n 50 --no-pager\n  exit 1\nfi\n\necho \"[$(date)] CALDERA deployment completed successfully\"\nSETUP_SCRIPT\n)"'
+      fileUris: [
+        'https://raw.githubusercontent.com/L1quidDroid/caldera/main/bicep/scripts/install-caldera.sh'
+      ]
+      commandToExecute: 'bash install-caldera.sh'
     }
   }
 }

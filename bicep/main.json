@@ -1,0 +1,1682 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.39.26.7824",
+      "templateHash": "11927292851234331365"
+    }
+  },
+  "parameters": {
+    "environment": {
+      "type": "string",
+      "defaultValue": "dev",
+      "allowedValues": [
+        "dev",
+        "stage",
+        "prod-lab"
+      ],
+      "metadata": {
+        "description": "Environment name (dev, stage, prod-lab)"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "australiaeast",
+      "allowedValues": [
+        "australiaeast",
+        "australiasoutheast"
+      ],
+      "metadata": {
+        "description": "Azure region for deployment"
+      }
+    },
+    "deploymentId": {
+      "type": "string",
+      "defaultValue": "[utcNow('yyyyMMdd-HHmm')]",
+      "metadata": {
+        "description": "Unique deployment identifier (timestamp)"
+      }
+    },
+    "ownerTag": {
+      "type": "string",
+      "defaultValue": "tonyto",
+      "metadata": {
+        "description": "Owner tag for resource management"
+      }
+    },
+    "costCenter": {
+      "type": "string",
+      "defaultValue": "cybersec-purple-team",
+      "metadata": {
+        "description": "Cost center for billing allocation"
+      }
+    },
+    "attackTactic": {
+      "type": "string",
+      "defaultValue": "TA0001",
+      "metadata": {
+        "description": "MITRE ATT&CK tactic for this lab instance"
+      }
+    },
+    "enableAtomicRedTeam": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable Atomic Red Team auto-execution"
+      }
+    },
+    "adminUsername": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Admin username for all VMs"
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Admin password for all VMs"
+      }
+    },
+    "sshPublicKey": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "SSH public key for Linux VMs"
+      }
+    },
+    "keyVaultId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Key Vault resource ID for secrets"
+      }
+    }
+  },
+  "variables": {
+    "resourceGroupName": "[format('rg-caldera-{0}-{1}', parameters('environment'), parameters('deploymentId'))]",
+    "commonTags": {
+      "environment": "[parameters('environment')]",
+      "owner": "[parameters('ownerTag')]",
+      "cost-center": "[parameters('costCenter')]",
+      "mitre-attck-tactic": "[parameters('attackTactic')]",
+      "data-sovereignty": "australia",
+      "deployment-id": "[parameters('deploymentId')]",
+      "workload": "purple-team-lab",
+      "managed-by": "bicep-cicd"
+    },
+    "vmSizes": {
+      "dev": {
+        "caldera": "Standard_B2s",
+        "agent": "Standard_B2s",
+        "elk": "Standard_B2s"
+      },
+      "stage": {
+        "caldera": "Standard_D4s_v5",
+        "agent": "Standard_D2s_v5",
+        "elk": "Standard_D4s_v5"
+      },
+      "prod-lab": {
+        "caldera": "Standard_D4s_v5",
+        "agent": "Standard_D2s_v5",
+        "elk": "Standard_E4s_v5"
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2023-07-01",
+      "name": "[variables('resourceGroupName')]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('commonTags')]"
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "network-deployment",
+      "resourceGroup": "[variables('resourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          },
+          "tags": {
+            "value": "[variables('commonTags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "14193845748606611893"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "environment": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object"
+            }
+          },
+          "variables": {
+            "vnetName": "[format('vnet-caldera-{0}', parameters('environment'))]",
+            "calderaSubnetName": "snet-caldera-server",
+            "elkSubnetName": "snet-elk-stack",
+            "agentsSubnetName": "snet-agents"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2023-05-01",
+              "name": "[variables('vnetName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "10.0.0.0/16"
+                  ]
+                },
+                "subnets": [
+                  {
+                    "name": "[variables('calderaSubnetName')]",
+                    "properties": {
+                      "addressPrefix": "10.0.1.0/24",
+                      "networkSecurityGroup": {
+                        "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('nsg-caldera-{0}', parameters('environment')))]"
+                      },
+                      "privateEndpointNetworkPolicies": "Disabled"
+                    }
+                  },
+                  {
+                    "name": "[variables('elkSubnetName')]",
+                    "properties": {
+                      "addressPrefix": "10.0.2.0/24",
+                      "networkSecurityGroup": {
+                        "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('nsg-elk-{0}', parameters('environment')))]"
+                      }
+                    }
+                  },
+                  {
+                    "name": "[variables('agentsSubnetName')]",
+                    "properties": {
+                      "addressPrefix": "10.0.3.0/24",
+                      "networkSecurityGroup": {
+                        "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('nsg-agents-{0}', parameters('environment')))]"
+                      }
+                    }
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', format('nsg-agents-{0}', parameters('environment')))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', format('nsg-caldera-{0}', parameters('environment')))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', format('nsg-elk-{0}', parameters('environment')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2023-05-01",
+              "name": "[format('nsg-caldera-{0}', parameters('environment'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "securityRules": [
+                  {
+                    "name": "AllowSSH",
+                    "properties": {
+                      "priority": 100,
+                      "direction": "Inbound",
+                      "access": "Allow",
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "22",
+                      "sourceAddressPrefix": "*",
+                      "destinationAddressPrefix": "*",
+                      "description": "Allow SSH for management"
+                    }
+                  },
+                  {
+                    "name": "AllowCALDERA",
+                    "properties": {
+                      "priority": 110,
+                      "direction": "Inbound",
+                      "access": "Allow",
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "8888",
+                      "sourceAddressPrefix": "*",
+                      "destinationAddressPrefix": "*",
+                      "description": "Allow CALDERA web UI"
+                    }
+                  },
+                  {
+                    "name": "AllowAgentC2",
+                    "properties": {
+                      "priority": 120,
+                      "direction": "Inbound",
+                      "access": "Allow",
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRanges": [
+                        "7010",
+                        "7011",
+                        "7012"
+                      ],
+                      "sourceAddressPrefix": "10.0.3.0/24",
+                      "destinationAddressPrefix": "*",
+                      "description": "Allow agent C2 from agents subnet only"
+                    }
+                  },
+                  {
+                    "name": "AllowHTTP",
+                    "properties": {
+                      "priority": 130,
+                      "direction": "Inbound",
+                      "access": "Allow",
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRanges": [
+                        "80",
+                        "443",
+                        "8080"
+                      ],
+                      "sourceAddressPrefix": "*",
+                      "destinationAddressPrefix": "*",
+                      "description": "Allow HTTP/HTTPS"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2023-05-01",
+              "name": "[format('nsg-elk-{0}', parameters('environment'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "securityRules": [
+                  {
+                    "name": "AllowSSH",
+                    "properties": {
+                      "priority": 100,
+                      "direction": "Inbound",
+                      "access": "Allow",
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "22",
+                      "sourceAddressPrefix": "*",
+                      "destinationAddressPrefix": "*",
+                      "description": "Allow SSH for management"
+                    }
+                  },
+                  {
+                    "name": "AllowKibana",
+                    "properties": {
+                      "priority": 110,
+                      "direction": "Inbound",
+                      "access": "Allow",
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "5601",
+                      "sourceAddressPrefix": "*",
+                      "destinationAddressPrefix": "*",
+                      "description": "Allow Kibana web UI"
+                    }
+                  },
+                  {
+                    "name": "AllowElasticsearch",
+                    "properties": {
+                      "priority": 120,
+                      "direction": "Inbound",
+                      "access": "Allow",
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "9200",
+                      "sourceAddressPrefix": "10.0.0.0/16",
+                      "destinationAddressPrefix": "*",
+                      "description": "Allow Elasticsearch from VNet only"
+                    }
+                  },
+                  {
+                    "name": "AllowBeats",
+                    "properties": {
+                      "priority": 130,
+                      "direction": "Inbound",
+                      "access": "Allow",
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "5044",
+                      "sourceAddressPrefix": "10.0.0.0/16",
+                      "destinationAddressPrefix": "*",
+                      "description": "Allow Filebeat/Metricbeat from VNet"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2023-05-01",
+              "name": "[format('nsg-agents-{0}', parameters('environment'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "securityRules": [
+                  {
+                    "name": "AllowSSH",
+                    "properties": {
+                      "priority": 100,
+                      "direction": "Inbound",
+                      "access": "Allow",
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "22",
+                      "sourceAddressPrefix": "*",
+                      "destinationAddressPrefix": "*",
+                      "description": "Allow SSH for Linux agents"
+                    }
+                  },
+                  {
+                    "name": "AllowRDP",
+                    "properties": {
+                      "priority": 110,
+                      "direction": "Inbound",
+                      "access": "Allow",
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "3389",
+                      "sourceAddressPrefix": "*",
+                      "destinationAddressPrefix": "*",
+                      "description": "Allow RDP for Windows agents"
+                    }
+                  },
+                  {
+                    "name": "AllowCALDERAC2Outbound",
+                    "properties": {
+                      "priority": 100,
+                      "direction": "Outbound",
+                      "access": "Allow",
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRanges": [
+                        "7010",
+                        "7011",
+                        "7012",
+                        "8888"
+                      ],
+                      "sourceAddressPrefix": "*",
+                      "destinationAddressPrefix": "10.0.1.0/24",
+                      "description": "Allow C2 to CALDERA server"
+                    }
+                  },
+                  {
+                    "name": "AllowELKBeatsOutbound",
+                    "properties": {
+                      "priority": 110,
+                      "direction": "Outbound",
+                      "access": "Allow",
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "5044",
+                      "sourceAddressPrefix": "*",
+                      "destinationAddressPrefix": "10.0.2.0/24",
+                      "description": "Allow log shipping to ELK"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "outputs": {
+            "vnetId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+            },
+            "vnetName": {
+              "type": "string",
+              "value": "[variables('vnetName')]"
+            },
+            "calderaSubnetId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/virtualNetworks', variables('vnetName')), '2023-05-01').subnets[0].id]"
+            },
+            "elkSubnetId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/virtualNetworks', variables('vnetName')), '2023-05-01').subnets[1].id]"
+            },
+            "agentsSubnetId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/virtualNetworks', variables('vnetName')), '2023-05-01').subnets[2].id]"
+            },
+            "nsgCalderaId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/networkSecurityGroups', format('nsg-caldera-{0}', parameters('environment')))]"
+            },
+            "nsgElkId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/networkSecurityGroups', format('nsg-elk-{0}', parameters('environment')))]"
+            },
+            "nsgAgentsId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/networkSecurityGroups', format('nsg-agents-{0}', parameters('environment')))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('resourceGroupName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "logging-deployment",
+      "resourceGroup": "[variables('resourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          },
+          "tags": {
+            "value": "[variables('commonTags')]"
+          },
+          "retentionDays": "[if(equals(parameters('environment'), 'prod-lab'), createObject('value', 90), createObject('value', 30))]"
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "13920532291351765452"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "environment": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object"
+            },
+            "retentionDays": {
+              "type": "int",
+              "defaultValue": 30,
+              "metadata": {
+                "description": "Log retention in days"
+              }
+            }
+          },
+          "variables": {
+            "workspaceName": "[format('law-caldera-{0}-{1}', parameters('environment'), uniqueString(resourceGroup().id))]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2022-10-01",
+              "name": "[variables('workspaceName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "sku": {
+                  "name": "PerGB2018"
+                },
+                "retentionInDays": "[parameters('retentionDays')]",
+                "features": {
+                  "enableLogAccessUsingOnlyResourcePermissions": true
+                },
+                "workspaceCapping": {
+                  "dailyQuotaGb": "[if(equals(parameters('environment'), 'dev'), 1, if(equals(parameters('environment'), 'stage'), 5, 10))]"
+                },
+                "publicNetworkAccessForIngestion": "Enabled",
+                "publicNetworkAccessForQuery": "Enabled"
+              }
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/savedSearches",
+              "apiVersion": "2020-08-01",
+              "name": "[format('{0}/{1}', variables('workspaceName'), 'MITREAttackDetections')]",
+              "properties": {
+                "category": "Purple Team",
+                "displayName": "MITRE ATT&CK Detections",
+                "query": "      union *\n      | where TimeGenerated > ago(24h)\n      | where Message contains \"MITRE\" or Message contains \"ATT&CK\" or Message contains \"T1\"\n      | extend Technique = extract(\"(T[0-9]{4}(\\\\\\\\.[0-9]{3})?)\", 1, Message)\n      | where isnotempty(Technique)\n      | summarize Count=count(), FirstSeen=min(TimeGenerated), LastSeen=max(TimeGenerated) by Technique, Computer, _ResourceId\n      | order by Count desc\n    ",
+                "version": 2
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/savedSearches",
+              "apiVersion": "2020-08-01",
+              "name": "[format('{0}/{1}', variables('workspaceName'), 'CalderaOperations')]",
+              "properties": {
+                "category": "Purple Team",
+                "displayName": "CALDERA Operations Activity",
+                "query": "      Syslog\n      | where ProcessName contains \"caldera\" or ProcessName contains \"python\"\n      | where SyslogMessage contains \"operation\" or SyslogMessage contains \"agent\"\n      | extend OperationId = extract(\"operation[_-]id[=:]['\\\\\\\"]?([a-f0-9-]+)\", 1, SyslogMessage)\n      | extend AgentId = extract(\"agent[_-]id[=:]['\\\\\\\"]?([a-f0-9-]+)\", 1, SyslogMessage)\n      | project TimeGenerated, Computer, Facility, SeverityLevel, OperationId, AgentId, SyslogMessage\n      | order by TimeGenerated desc\n    ",
+                "version": 2
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Insights/scheduledQueryRules",
+              "apiVersion": "2023-03-15-preview",
+              "name": "caldera-agent-checkin-failure",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "displayName": "CALDERA Agent Check-in Failure",
+                "description": "Alert when agents fail to check in for 10 minutes",
+                "severity": 2,
+                "enabled": true,
+                "evaluationFrequency": "PT5M",
+                "scopes": [
+                  "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
+                ],
+                "targetResourceTypes": [
+                  "Microsoft.OperationalInsights/workspaces"
+                ],
+                "windowSize": "PT10M",
+                "criteria": {
+                  "allOf": [
+                    {
+                      "query": "            Heartbeat\n            | where Computer contains \"agent\"\n            | summarize LastHeartbeat=max(TimeGenerated) by Computer\n            | where LastHeartbeat < ago(10m)\n          ",
+                      "timeAggregation": "Count",
+                      "operator": "GreaterThan",
+                      "threshold": 0,
+                      "failingPeriods": {
+                        "numberOfEvaluationPeriods": 1,
+                        "minFailingPeriodsToAlert": 1
+                      }
+                    }
+                  ]
+                },
+                "autoMitigate": false
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "workspaceId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
+            },
+            "workspaceName": {
+              "type": "string",
+              "value": "[variables('workspaceName')]"
+            },
+            "customerId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName')), '2022-10-01').customerId]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('resourceGroupName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "caldera-server-deployment",
+      "resourceGroup": "[variables('resourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          },
+          "vmSize": {
+            "value": "[variables('vmSizes')[parameters('environment')].caldera]"
+          },
+          "adminUsername": {
+            "value": "[parameters('adminUsername')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "sshPublicKey": {
+            "value": "[parameters('sshPublicKey')]"
+          },
+          "subnetId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'network-deployment'), '2025-04-01').outputs.calderaSubnetId.value]"
+          },
+          "logAnalyticsWorkspaceId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'logging-deployment'), '2025-04-01').outputs.workspaceId.value]"
+          },
+          "tags": {
+            "value": "[union(variables('commonTags'), createObject('role', 'caldera-server', 'attack-surface', 'command-control'))]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "15197475426004515351"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "environment": {
+              "type": "string"
+            },
+            "vmSize": {
+              "type": "string"
+            },
+            "adminUsername": {
+              "type": "string"
+            },
+            "adminPassword": {
+              "type": "securestring"
+            },
+            "sshPublicKey": {
+              "type": "string"
+            },
+            "subnetId": {
+              "type": "string"
+            },
+            "logAnalyticsWorkspaceId": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object"
+            }
+          },
+          "variables": {
+            "$fxv#0": "#!/bin/bash\nset -euo pipefail\n\n# ============================================================================\n# CALDERA Server Setup Script (for Bicep CustomScriptExtension)\n# ============================================================================\n# This script is downloaded and executed on the CALDERA VM.\n# It handles all software installation and configuration.\n# ============================================================================\n\n# Parameters passed from Bicep\nADMIN_USERNAME=$1\n\n# Setup logging\nLOG_FILE=/var/log/caldera-setup.log\nexec 1> >(tee -a \"$LOG_FILE\")\nexec 2>&1\n\necho \"[$(date)] Starting CALDERA setup...\"\n\n# Install dependencies\nexport DEBIAN_FRONTEND=noninteractive\napt-get update -qq\napt-get install -y python3-venv python3-pip python3-dev build-essential git curl -qq\n\n# Install Node.js 20.x (for Magma plugin build)\necho \"[$(date)] Installing Node.js 20.x...\"\ncurl -fsSL https://deb.nodesource.com/setup_20.x | bash -\napt-get install -y nodejs -qq\nnode --version\nnpm --version\n\n# Clone CALDERA repository\necho \"[$(date)] Cloning CALDERA repository...\"\ncd \"/home/$ADMIN_USERNAME\"\nif [ ! -d \"caldera\" ]; then\n  git clone https://github.com/mitre/caldera.git --recursive --branch master\nfi\ncd caldera\n\n# Create Python virtual environment\necho \"[$(date)] Creating Python virtual environment...\"\npython3 -m venv caldera_venv\nsource caldera_venv/bin/activate\npip install --upgrade pip setuptools wheel --quiet\necho \"[$(date)] Installing Python requirements...\"\npip install -r requirements.txt --quiet\ndeactivate\n\n# Build Magma frontend (CRITICAL - prevents FileNotFoundError)\necho \"[$(date)] Building Magma frontend...\"\ncd plugins/magma\nnpm install --quiet\ntimeout 300 npm run build || { echo \"Magma build failed\"; exit 1; }\nif [ -d \"dist\" ]; then\n  echo \"[$(date)] Magma dist/ created successfully ($(du -sh dist | cut -f1))\"\nelse\n  echo \"ERROR: Magma dist/ not found after build\"\n  exit 1\nfi\ncd ../.. # Back to caldera root\n\n# Install orchestrator plugin dependencies\necho \"[$(date)] Installing orchestrator plugin dependencies...\"\ncd orchestrator\nsource ../caldera_venv/bin/activate\npip install -r requirements.txt --quiet\ndeactivate\ncd .. # Back to caldera root\n\n# Configure CALDERA\necho \"[$(date)] Configuring CALDERA...\"\ncat > conf/local.yml << \"EOF\"\nhost: 0.0.0.0\nplugins:\n  - access\n  - atomic\n  - branding\n  - compass\n  - fieldmanual\n  - gameboard\n  - magma\n  - manx\n  - orchestrator\n  - response\n  - sandcat\n  - stockpile\n  - training\nusers:\n  red:\n    red: admin\n  blue:\n    blue: admin\nEOF\n\n# Create systemd service\necho \"[$(date)] Creating systemd service...\"\ncat > /etc/systemd/system/caldera.service << EOF\n[Unit]\nDescription=CALDERA Adversary Emulation Platform\nAfter=network.target\nWants=network-online.target\n\n[Service]\nType=simple\nUser=$ADMIN_USERNAME\nWorkingDirectory=/home/$ADMIN_USERNAME/caldera\nExecStart=/home/$ADMIN_USERNAME/caldera/caldera_venv/bin/python /home/$ADMIN_USERNAME/caldera/server.py --insecure\nRestart=always\nRestartSec=10\nStandardOutput=journal\nStandardError=journal\n\n[Install]\nWantedBy=multi-user.target\nEOF\n\n# Set permissions\nchown -R \"$ADMIN_USERNAME:$ADMIN_USERNAME\" \"/home/$ADMIN_USERNAME/caldera\"\n\n# Enable and start service\necho \"[$(date)] Starting CALDERA service...\"\nsystemctl daemon-reload\nsystemctl enable caldera\nsystemctl start caldera\n\n# Wait for startup\nsleep 20\n\n# Verify health\nif curl -sf http://localhost:8888 > /dev/null; then\n  echo \"[$(date)] ✅ CALDERA setup complete - service healthy\"\n  systemctl status caldera --no-pager\nelse\n  echo \"[$(date)] ❌ CALDERA setup failed - service not responding\"\n  systemctl status caldera --no-pager\n  journalctl -u caldera -n 50 --no-pager\n  exit 1\nfi\n\necho \"[$(date)] CALDERA deployment completed successfully\"\n",
+            "vmName": "[format('vm-caldera-{0}', parameters('environment'))]",
+            "nicName": "[format('nic-{0}', variables('vmName'))]",
+            "pipName": "[format('pip-{0}', variables('vmName'))]",
+            "osDiskName": "[format('{0}-osdisk', variables('vmName'))]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2023-05-01",
+              "name": "[variables('pipName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Standard"
+              },
+              "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                  "domainNameLabel": "[format('{0}-{1}', variables('vmName'), uniqueString(resourceGroup().id))]"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Network/networkInterfaces",
+              "apiVersion": "2023-05-01",
+              "name": "[variables('nicName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "ipConfigurations": [
+                  {
+                    "name": "ipconfig1",
+                    "properties": {
+                      "subnet": {
+                        "id": "[parameters('subnetId')]"
+                      },
+                      "privateIPAllocationMethod": "Dynamic",
+                      "publicIPAddress": {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+                      }
+                    }
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Compute/virtualMachines",
+              "apiVersion": "2023-07-01",
+              "name": "[variables('vmName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "hardwareProfile": {
+                  "vmSize": "[parameters('vmSize')]"
+                },
+                "osProfile": {
+                  "computerName": "[variables('vmName')]",
+                  "adminUsername": "[parameters('adminUsername')]",
+                  "adminPassword": "[parameters('adminPassword')]",
+                  "linuxConfiguration": {
+                    "disablePasswordAuthentication": false,
+                    "ssh": {
+                      "publicKeys": "[if(empty(parameters('sshPublicKey')), createArray(), createArray(createObject('path', format('/home/{0}/.ssh/authorized_keys', parameters('adminUsername')), 'keyData', parameters('sshPublicKey'))))]"
+                    }
+                  }
+                },
+                "storageProfile": {
+                  "imageReference": {
+                    "publisher": "Canonical",
+                    "offer": "0001-com-ubuntu-server-jammy",
+                    "sku": "22_04-lts-gen2",
+                    "version": "latest"
+                  },
+                  "osDisk": {
+                    "name": "[variables('osDiskName')]",
+                    "createOption": "FromImage",
+                    "managedDisk": {
+                      "storageAccountType": "Premium_LRS"
+                    },
+                    "diskSizeGB": 128
+                  }
+                },
+                "networkProfile": {
+                  "networkInterfaces": [
+                    {
+                      "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+                    }
+                  ]
+                },
+                "diagnosticsProfile": {
+                  "bootDiagnostics": {
+                    "enabled": true
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Compute/virtualMachines/extensions",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', variables('vmName'), 'caldera-setup')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "publisher": "Microsoft.Azure.Extensions",
+                "type": "CustomScript",
+                "typeHandlerVersion": "2.0",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                  "script": "[variables('$fxv#0')]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Compute/virtualMachines/extensions",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', variables('vmName'), 'AzureMonitorLinuxAgent')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "publisher": "Microsoft.Azure.Monitor",
+                "type": "AzureMonitorLinuxAgent",
+                "typeHandlerVersion": "1.25",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                  "workspaceId": "[reference(parameters('logAnalyticsWorkspaceId'), '2022-10-01').customerId]"
+                },
+                "protectedSettings": {
+                  "workspaceKey": "[listKeys(parameters('logAnalyticsWorkspaceId'), '2022-10-01').primarySharedKey]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]",
+                "[resourceId('Microsoft.Compute/virtualMachines/extensions', variables('vmName'), 'caldera-setup')]"
+              ]
+            }
+          ],
+          "outputs": {
+            "vmId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+            },
+            "vmName": {
+              "type": "string",
+              "value": "[variables('vmName')]"
+            },
+            "publicIpAddress": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('pipName')), '2023-05-01').ipAddress]"
+            },
+            "privateIpAddress": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('nicName')), '2023-05-01').ipConfigurations[0].properties.privateIPAddress]"
+            },
+            "fqdn": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('pipName')), '2023-05-01').dnsSettings.fqdn]"
+            },
+            "systemAssignedIdentity": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Compute/virtualMachines', variables('vmName')), '2023-07-01', 'full').identity.principalId]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'logging-deployment')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'network-deployment')]",
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('resourceGroupName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "elk-server-deployment",
+      "resourceGroup": "[variables('resourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          },
+          "vmSize": {
+            "value": "[variables('vmSizes')[parameters('environment')].elk]"
+          },
+          "adminUsername": {
+            "value": "[parameters('adminUsername')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "sshPublicKey": {
+            "value": "[parameters('sshPublicKey')]"
+          },
+          "subnetId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'network-deployment'), '2025-04-01').outputs.elkSubnetId.value]"
+          },
+          "logAnalyticsWorkspaceId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'logging-deployment'), '2025-04-01').outputs.workspaceId.value]"
+          },
+          "tags": {
+            "value": "[union(variables('commonTags'), createObject('role', 'elk-stack', 'attack-surface', 'detection-logging'))]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "2578940961177176247"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "environment": {
+              "type": "string"
+            },
+            "vmSize": {
+              "type": "string"
+            },
+            "adminUsername": {
+              "type": "string"
+            },
+            "adminPassword": {
+              "type": "securestring"
+            },
+            "sshPublicKey": {
+              "type": "string"
+            },
+            "subnetId": {
+              "type": "string"
+            },
+            "logAnalyticsWorkspaceId": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object"
+            }
+          },
+          "variables": {
+            "$fxv#0": "#!/bin/bash\nset -euo pipefail\n\n# ============================================================================\n# ELK Stack Setup Script (for Bicep CustomScriptExtension)\n# ============================================================================\n# This script is downloaded and executed on the ELK VM.\n# It handles all software installation and configuration.\n# ============================================================================\n\nLOG_FILE=/var/log/elk-setup.log\nexec 1> >(tee -a \"$LOG_FILE\")\nexec 2>&1\n\necho \"[$(date)] Starting ELK Stack setup...\"\n\n# Install dependencies\nexport DEBIAN_FRONTEND=noninteractive\napt-get update -qq\napt-get install -y apt-transport-https ca-certificates curl gnupg -qq\n\n# Add Elastic repository\necho \"[$(date)] Adding Elastic repository...\"\ncurl -fsSL https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --dearmor -o /usr/share/keyrings/elastic.gpg\necho \"deb [signed-by=/usr/share/keyrings/elastic.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main\" | tee /etc/apt/sources.list.d/elastic-8.x.list\n\n# Install ELK components\necho \"[$(date)] Installing Elasticsearch, Kibana, Logstash...\"\napt-get update -qq\napt-get install -y elasticsearch kibana logstash -qq\n\n# Configure Elasticsearch\necho \"[$(date)] Configuring Elasticsearch...\"\ncat >> /etc/elasticsearch/elasticsearch.yml << EOF\nnetwork.host: 0.0.0.0\ndiscovery.type: single-node\nxpack.security.enabled: false\nEOF\n\n# Configure Kibana\necho \"[$(date)] Configuring Kibana...\"\ncat >> /etc/kibana/kibana.yml << EOF\nserver.host: \"0.0.0.0\"\nelasticsearch.hosts: [\"http://localhost:9200\"]\nEOF\n\n# Configure Logstash to receive Winlogbeat data\necho \"[$(date)] Configuring Logstash...\"\ncat > /etc/logstash/conf.d/winlogbeat.conf << EOF\ninput {\n  beats {\n    port => 5044\n  }\n}\noutput {\n  elasticsearch {\n    hosts => [\"http://localhost:9200\"]\n    index => \"winlogbeat-%{+YYYY.MM.dd}\"\n  }\n}\nEOF\n\n# Enable and start services\necho \"[$(date)] Starting ELK services...\"\nsystemctl daemon-reload\nsystemctl enable elasticsearch\nsystemctl enable kibana\nsystemctl enable logstash\nsystemctl start elasticsearch\nsystemctl start kibana\nsystemctl start logstash\n\n# Wait for services to start\necho \"[$(date)] Waiting for services to stabilize...\"\nsleep 60\n\n# Health checks\necho \"[$(date)] Running health checks...\"\nif curl -sf \"http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=50s\"; then\n    echo \"[$(date)] ✅ Elasticsearch is healthy\"\nelse\n    echo \"[$(date)] ❌ Elasticsearch health check failed\"\n    exit 1\nfi\n\nif curl -sf \"http://localhost:5601/api/status\"; then\n    echo \"[$(date)] ✅ Kibana is healthy\"\nelse\n    echo \"[$(date)] ❌ Kibana health check failed\"\n    exit 1\nfi\n\necho \"[$(date)] ✅ ELK Stack setup complete\"\n",
+            "vmName": "[format('vm-elk-{0}', parameters('environment'))]",
+            "nicName": "[format('nic-{0}', variables('vmName'))]",
+            "pipName": "[format('pip-{0}', variables('vmName'))]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2023-05-01",
+              "name": "[variables('pipName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Standard"
+              },
+              "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                  "domainNameLabel": "[format('{0}-{1}', variables('vmName'), uniqueString(resourceGroup().id))]"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Network/networkInterfaces",
+              "apiVersion": "2023-05-01",
+              "name": "[variables('nicName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "ipConfigurations": [
+                  {
+                    "name": "ipconfig1",
+                    "properties": {
+                      "subnet": {
+                        "id": "[parameters('subnetId')]"
+                      },
+                      "privateIPAllocationMethod": "Dynamic",
+                      "publicIPAddress": {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+                      }
+                    }
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Compute/virtualMachines",
+              "apiVersion": "2023-07-01",
+              "name": "[variables('vmName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "hardwareProfile": {
+                  "vmSize": "[parameters('vmSize')]"
+                },
+                "osProfile": {
+                  "computerName": "[variables('vmName')]",
+                  "adminUsername": "[parameters('adminUsername')]",
+                  "adminPassword": "[parameters('adminPassword')]",
+                  "linuxConfiguration": {
+                    "disablePasswordAuthentication": false,
+                    "ssh": {
+                      "publicKeys": "[if(empty(parameters('sshPublicKey')), createArray(), createArray(createObject('path', format('/home/{0}/.ssh/authorized_keys', parameters('adminUsername')), 'keyData', parameters('sshPublicKey'))))]"
+                    }
+                  }
+                },
+                "storageProfile": {
+                  "imageReference": {
+                    "publisher": "Canonical",
+                    "offer": "0001-com-ubuntu-server-jammy",
+                    "sku": "22_04-lts-gen2",
+                    "version": "latest"
+                  },
+                  "osDisk": {
+                    "name": "[format('{0}-osdisk', variables('vmName'))]",
+                    "createOption": "FromImage",
+                    "managedDisk": {
+                      "storageAccountType": "Premium_LRS"
+                    },
+                    "diskSizeGB": 256
+                  }
+                },
+                "networkProfile": {
+                  "networkInterfaces": [
+                    {
+                      "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+                    }
+                  ]
+                },
+                "diagnosticsProfile": {
+                  "bootDiagnostics": {
+                    "enabled": true
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Compute/virtualMachines/extensions",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', variables('vmName'), 'elk-setup')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "publisher": "Microsoft.Azure.Extensions",
+                "type": "CustomScript",
+                "typeHandlerVersion": "2.0",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                  "script": "[variables('$fxv#0')]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "vmId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+            },
+            "vmName": {
+              "type": "string",
+              "value": "[variables('vmName')]"
+            },
+            "publicIpAddress": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('pipName')), '2023-05-01').ipAddress]"
+            },
+            "privateIpAddress": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('nicName')), '2023-05-01').ipConfigurations[0].properties.privateIPAddress]"
+            },
+            "fqdn": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('pipName')), '2023-05-01').dnsSettings.fqdn]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'logging-deployment')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'network-deployment')]",
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('resourceGroupName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "windows-agent-deployment",
+      "resourceGroup": "[variables('resourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          },
+          "vmSize": {
+            "value": "[variables('vmSizes')[parameters('environment')].agent]"
+          },
+          "adminUsername": {
+            "value": "[parameters('adminUsername')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "subnetId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'network-deployment'), '2025-04-01').outputs.agentsSubnetId.value]"
+          },
+          "calderaServerIp": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'caldera-server-deployment'), '2025-04-01').outputs.privateIpAddress.value]"
+          },
+          "elkServerIp": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'elk-server-deployment'), '2025-04-01').outputs.privateIpAddress.value]"
+          },
+          "logAnalyticsWorkspaceId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'logging-deployment'), '2025-04-01').outputs.workspaceId.value]"
+          },
+          "enableAtomicRedTeam": {
+            "value": "[parameters('enableAtomicRedTeam')]"
+          },
+          "tags": {
+            "value": "[union(variables('commonTags'), createObject('role', 'red-team-agent', 'os', 'windows-server-2022', 'attack-surface', 'execution-target'))]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "5747092150969807469"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "environment": {
+              "type": "string"
+            },
+            "vmSize": {
+              "type": "string"
+            },
+            "adminUsername": {
+              "type": "string"
+            },
+            "adminPassword": {
+              "type": "securestring"
+            },
+            "subnetId": {
+              "type": "string"
+            },
+            "calderaServerIp": {
+              "type": "string"
+            },
+            "elkServerIp": {
+              "type": "string"
+            },
+            "logAnalyticsWorkspaceId": {
+              "type": "string"
+            },
+            "enableAtomicRedTeam": {
+              "type": "bool",
+              "defaultValue": false
+            },
+            "tags": {
+              "type": "object"
+            }
+          },
+          "variables": {
+            "$fxv#0": "#!C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -ExecutionPolicy Bypass -Command\n# ============================================================================\n# Windows Agent Setup Script (for Bicep CustomScriptExtension)\n# ============================================================================\n# This script is downloaded and executed on the Windows VM.\n# It installs Sandcat and Winlogbeat.\n# ============================================================================\n\nparam(\n    [string]$calderaServerIp,\n    [string]$elkServerIp\n)\n\n# Start logging\nStart-Transcript -Path \"C:\\AzureData\\CustomData.log\" -Append\n\nWrite-Host \"Starting Windows Agent setup...\"\nWrite-Host \"CALDERA Server IP: $calderaServerIp\"\nWrite-Host \"ELK Server IP: $elkServerIp\"\n\n# Install Sandcat Agent\ntry {\n    Write-Host \"Installing Sandcat agent...\"\n    $calderaUrl = \"http://$calderaServerIp:8888\"\n    $sandcatUrl = \"$calderaUrl/file/download\"\n    $agentPath = \"$env:TEMP\\sandcat.exe\"\n    \n    Invoke-WebRequest -Uri $sandcatUrl -OutFile $agentPath -UseBasicParsing -TimeoutSec 60\n    \n    Start-Process -FilePath $agentPath -ArgumentList \"-server\", \"$calderaUrl\", \"-group\", \"red\", \"-v\" -WindowStyle Hidden\n    \n    Write-Host \"✅ Sandcat agent started successfully.\"\n}\ncatch {\n    Write-Warning \"❌ Sandcat agent installation failed: $_\"\n}\n\n# Install Winlogbeat\ntry {\n    Write-Host \"Installing Winlogbeat...\"\n    $winlogbeatUrl = 'https://artifacts.elastic.co/downloads/beats/winlogbeat/winlogbeat-8.11.0-windows-x86_64.zip'\n    $winlogbeatZip = \"$env:TEMP\\winlogbeat.zip\"\n    $winlogbeatDir = \"C:\\Program Files\\Winlogbeat\"\n\n    Invoke-WebRequest -Uri $winlogbeatUrl -OutFile $winlogbeatZip -UseBasicParsing\n    \n    Expand-Archive -Path $winlogbeatZip -DestinationPath \"$env:TEMP\\winlogbeat\" -Force\n    \n    New-Item -ItemType Directory -Force -Path $winlogbeatDir | Out-Null\n    \n    Copy-Item -Path \"$env:TEMP\\winlogbeat\\winlogbeat-*\\*\" -Destination $winlogbeatDir -Recurse -Force\n\n    # Create Winlogbeat configuration\n    $winlogbeatConfig = @\"\nwinlogbeat.event_logs:\n  - name: Application\n    ignore_older: 72h\n  - name: Security\n  - name: System\n  - name: Microsoft-Windows-Sysmon/Operational\n\noutput.logstash:\n  hosts: [\"$elkServerIp:5044\"]\n\nlogging.level: info\nlogging.to_files: true\nlogging.files:\n  path: C:/ProgramData/winlogbeat/Logs\n\"@\n    \n    Set-Content -Path \"$winlogbeatDir\\winlogbeat.yml\" -Value $winlogbeatConfig -Force\n\n    # Install and start the service\n    & \"$winlogbeatDir\\install-service-winlogbeat.ps1\"\n    Start-Service winlogbeat\n\n    Write-Host \"✅ Winlogbeat configured and started.\"\n}\ncatch {\n    Write-Warning \"❌ Winlogbeat installation failed: $_\"\n}\n\nStop-Transcript\n",
+            "vmName": "[format('vm-windows-agent-{0}', parameters('environment'))]",
+            "nicName": "[format('nic-{0}', variables('vmName'))]",
+            "pipName": "[format('pip-{0}', variables('vmName'))]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2023-05-01",
+              "name": "[variables('pipName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Standard"
+              },
+              "properties": {
+                "publicIPAllocationMethod": "Static"
+              }
+            },
+            {
+              "type": "Microsoft.Network/networkInterfaces",
+              "apiVersion": "2023-05-01",
+              "name": "[variables('nicName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "ipConfigurations": [
+                  {
+                    "name": "ipconfig1",
+                    "properties": {
+                      "subnet": {
+                        "id": "[parameters('subnetId')]"
+                      },
+                      "privateIPAllocationMethod": "Dynamic",
+                      "publicIPAddress": {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+                      }
+                    }
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Compute/virtualMachines",
+              "apiVersion": "2023-07-01",
+              "name": "[variables('vmName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "hardwareProfile": {
+                  "vmSize": "[parameters('vmSize')]"
+                },
+                "osProfile": {
+                  "computerName": "[variables('vmName')]",
+                  "adminUsername": "[parameters('adminUsername')]",
+                  "adminPassword": "[parameters('adminPassword')]",
+                  "windowsConfiguration": {
+                    "provisionVMAgent": true,
+                    "enableAutomaticUpdates": false
+                  }
+                },
+                "storageProfile": {
+                  "imageReference": {
+                    "publisher": "MicrosoftWindowsServer",
+                    "offer": "WindowsServer",
+                    "sku": "2022-datacenter-azure-edition",
+                    "version": "latest"
+                  },
+                  "osDisk": {
+                    "name": "[format('{0}-osdisk', variables('vmName'))]",
+                    "createOption": "FromImage",
+                    "managedDisk": {
+                      "storageAccountType": "Premium_LRS"
+                    },
+                    "diskSizeGB": 128
+                  }
+                },
+                "networkProfile": {
+                  "networkInterfaces": [
+                    {
+                      "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+                    }
+                  ]
+                },
+                "diagnosticsProfile": {
+                  "bootDiagnostics": {
+                    "enabled": true
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Compute/virtualMachines/extensions",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', variables('vmName'), 'install-caldera-agent-winlogbeat')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "publisher": "Microsoft.Compute",
+                "type": "CustomScriptExtension",
+                "typeHandlerVersion": "1.10",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                  "commandToExecute": "[format('powershell -ExecutionPolicy Unrestricted -Command \"{0}\" -calderaServerIp {1} -elkServerIp {2}', variables('$fxv#0'), parameters('calderaServerIp'), parameters('elkServerIp'))]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "vmId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+            },
+            "vmName": {
+              "type": "string",
+              "value": "[variables('vmName')]"
+            },
+            "publicIpAddress": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('pipName')), '2023-05-01').ipAddress]"
+            },
+            "privateIpAddress": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('nicName')), '2023-05-01').ipConfigurations[0].properties.privateIPAddress]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'caldera-server-deployment')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'elk-server-deployment')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'logging-deployment')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'network-deployment')]",
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('resourceGroupName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "linux-agent-deployment",
+      "resourceGroup": "[variables('resourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          },
+          "vmSize": {
+            "value": "[variables('vmSizes')[parameters('environment')].agent]"
+          },
+          "adminUsername": {
+            "value": "[parameters('adminUsername')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "sshPublicKey": {
+            "value": "[parameters('sshPublicKey')]"
+          },
+          "subnetId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'network-deployment'), '2025-04-01').outputs.agentsSubnetId.value]"
+          },
+          "calderaServerIp": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'caldera-server-deployment'), '2025-04-01').outputs.privateIpAddress.value]"
+          },
+          "logAnalyticsWorkspaceId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'logging-deployment'), '2025-04-01').outputs.workspaceId.value]"
+          },
+          "tags": {
+            "value": "[union(variables('commonTags'), createObject('role', 'blue-team-agent', 'os', 'ubuntu-22.04', 'attack-surface', 'monitoring-target'))]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "15543785067977019423"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "environment": {
+              "type": "string"
+            },
+            "vmSize": {
+              "type": "string"
+            },
+            "adminUsername": {
+              "type": "string"
+            },
+            "adminPassword": {
+              "type": "securestring"
+            },
+            "sshPublicKey": {
+              "type": "string"
+            },
+            "subnetId": {
+              "type": "string"
+            },
+            "calderaServerIp": {
+              "type": "string"
+            },
+            "logAnalyticsWorkspaceId": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object"
+            }
+          },
+          "variables": {
+            "vmName": "[format('vm-linux-agent-{0}', parameters('environment'))]",
+            "nicName": "[format('nic-{0}', variables('vmName'))]",
+            "pipName": "[format('pip-{0}', variables('vmName'))]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2023-05-01",
+              "name": "[variables('pipName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Standard"
+              },
+              "properties": {
+                "publicIPAllocationMethod": "Static"
+              }
+            },
+            {
+              "type": "Microsoft.Network/networkInterfaces",
+              "apiVersion": "2023-05-01",
+              "name": "[variables('nicName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "ipConfigurations": [
+                  {
+                    "name": "ipconfig1",
+                    "properties": {
+                      "subnet": {
+                        "id": "[parameters('subnetId')]"
+                      },
+                      "privateIPAllocationMethod": "Dynamic",
+                      "publicIPAddress": {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+                      }
+                    }
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Compute/virtualMachines",
+              "apiVersion": "2023-07-01",
+              "name": "[variables('vmName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "hardwareProfile": {
+                  "vmSize": "[parameters('vmSize')]"
+                },
+                "osProfile": {
+                  "computerName": "[variables('vmName')]",
+                  "adminUsername": "[parameters('adminUsername')]",
+                  "adminPassword": "[parameters('adminPassword')]",
+                  "linuxConfiguration": {
+                    "disablePasswordAuthentication": false,
+                    "ssh": {
+                      "publicKeys": "[if(empty(parameters('sshPublicKey')), createArray(), createArray(createObject('path', format('/home/{0}/.ssh/authorized_keys', parameters('adminUsername')), 'keyData', parameters('sshPublicKey'))))]"
+                    }
+                  }
+                },
+                "storageProfile": {
+                  "imageReference": {
+                    "publisher": "Canonical",
+                    "offer": "0001-com-ubuntu-server-jammy",
+                    "sku": "22_04-lts-gen2",
+                    "version": "latest"
+                  },
+                  "osDisk": {
+                    "name": "[format('{0}-osdisk', variables('vmName'))]",
+                    "createOption": "FromImage",
+                    "managedDisk": {
+                      "storageAccountType": "Standard_LRS"
+                    },
+                    "diskSizeGB": 64
+                  }
+                },
+                "networkProfile": {
+                  "networkInterfaces": [
+                    {
+                      "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+                    }
+                  ]
+                },
+                "diagnosticsProfile": {
+                  "bootDiagnostics": {
+                    "enabled": true
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Compute/virtualMachines/extensions",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', variables('vmName'), 'install-caldera-agent')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "publisher": "Microsoft.Azure.Extensions",
+                "type": "CustomScript",
+                "typeHandlerVersion": "2.1",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                  "commandToExecute": "[format('bash -c \"curl -s http://{0}:8888/file/download -o /tmp/sandcat && chmod +x /tmp/sandcat && nohup /tmp/sandcat -server http://{1}:8888 -group blue -v > /dev/null 2>&1 &\"', parameters('calderaServerIp'), parameters('calderaServerIp'))]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "vmId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+            },
+            "vmName": {
+              "type": "string",
+              "value": "[variables('vmName')]"
+            },
+            "publicIpAddress": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('pipName')), '2023-05-01').ipAddress]"
+            },
+            "privateIpAddress": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('nicName')), '2023-05-01').ipConfigurations[0].properties.privateIPAddress]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'caldera-server-deployment')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'logging-deployment')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'network-deployment')]",
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('resourceGroupName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "resourceGroupName": {
+      "type": "string",
+      "value": "[variables('resourceGroupName')]"
+    },
+    "calderaServerUrl": {
+      "type": "string",
+      "value": "[format('http://{0}:8888', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'caldera-server-deployment'), '2025-04-01').outputs.publicIpAddress.value)]"
+    },
+    "calderaServerIp": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'caldera-server-deployment'), '2025-04-01').outputs.publicIpAddress.value]"
+    },
+    "elkKibanaUrl": {
+      "type": "string",
+      "value": "[format('http://{0}:5601', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'elk-server-deployment'), '2025-04-01').outputs.publicIpAddress.value)]"
+    },
+    "elkElasticsearchUrl": {
+      "type": "string",
+      "value": "[format('http://{0}:9200', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'elk-server-deployment'), '2025-04-01').outputs.publicIpAddress.value)]"
+    },
+    "windowsAgentIp": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'windows-agent-deployment'), '2025-04-01').outputs.publicIpAddress.value]"
+    },
+    "linuxAgentIp": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'linux-agent-deployment'), '2025-04-01').outputs.publicIpAddress.value]"
+    },
+    "logAnalyticsWorkspaceId": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'logging-deployment'), '2025-04-01').outputs.workspaceId.value]"
+    },
+    "deploymentId": {
+      "type": "string",
+      "value": "[parameters('deploymentId')]"
+    },
+    "vnetId": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'network-deployment'), '2025-04-01').outputs.vnetId.value]"
+    },
+    "accessInstructions": {
+      "type": "object",
+      "value": {
+        "caldera": {
+          "url": "[format('http://{0}:8888', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'caldera-server-deployment'), '2025-04-01').outputs.publicIpAddress.value)]",
+          "defaultCreds": "admin / admin",
+          "ssh": "[format('ssh {0}@{1}', parameters('adminUsername'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'caldera-server-deployment'), '2025-04-01').outputs.publicIpAddress.value)]"
+        },
+        "kibana": {
+          "url": "[format('http://{0}:5601', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'elk-server-deployment'), '2025-04-01').outputs.publicIpAddress.value)]",
+          "elasticsearch": "[format('http://{0}:9200', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'elk-server-deployment'), '2025-04-01').outputs.publicIpAddress.value)]"
+        },
+        "agents": {
+          "windows": {
+            "rdp": "[format('mstsc /v:{0}', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'windows-agent-deployment'), '2025-04-01').outputs.publicIpAddress.value)]",
+            "ip": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'windows-agent-deployment'), '2025-04-01').outputs.publicIpAddress.value]"
+          },
+          "linux": {
+            "ssh": "[format('ssh {0}@{1}', parameters('adminUsername'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'linux-agent-deployment'), '2025-04-01').outputs.publicIpAddress.value)]",
+            "ip": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'linux-agent-deployment'), '2025-04-01').outputs.publicIpAddress.value]"
+          }
+        }
+      }
+    }
+  }
+}

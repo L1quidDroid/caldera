@@ -71,9 +71,9 @@ var commonTags = {
 // Environment-specific VM sizes
 var vmSizes = {
   dev: {
-    caldera: 'Standard_D2s_v5'
+    caldera: 'Standard_B2s'
     agent: 'Standard_B2s'
-    elk: 'Standard_D2s_v5'
+    elk: 'Standard_B2s'
   }
   stage: {
     caldera: 'Standard_D4s_v5'
@@ -176,6 +176,7 @@ module windowsAgent 'modules/windows-agent.bicep' = {
     adminPassword: adminPassword
     subnetId: network.outputs.agentsSubnetId
     calderaServerIp: calderaServer.outputs.privateIpAddress
+    elkServerIp: elkServer.outputs.privateIpAddress
     logAnalyticsWorkspaceId: logging.outputs.workspaceId
     enableAtomicRedTeam: enableAtomicRedTeam
     tags: union(commonTags, {
