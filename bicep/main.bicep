@@ -121,42 +121,20 @@ module logging 'modules/logging.bicep' = {
   }
 }
 
-// CALDERA Server VM
-module calderaServer 'modules/caldera-server.bicep' = {
+// CALDERA & ELK Server (Consolidated)
+module calderaElkServer 'modules/caldera-elk-server.bicep' = {
   scope: resourceGroup
-  name: 'caldera-server-deployment'
+  name: 'caldera-elk-server-deployment'
   params: {
     location: location
     environment: environment
-    vmSize: vmSizes[environment].caldera
+    vmSize: vmSizes[environment].calderaElk
     adminUsername: adminUsername
     adminPassword: adminPassword
     sshPublicKey: sshPublicKey
-    subnetId: network.outputs.calderaSubnetId
-    logAnalyticsWorkspaceId: logging.outputs.workspaceId
+    subnetId: network.outputs.calderaSubnetId // Using caldera subnet
     tags: union(commonTags, {
-      role: 'caldera-server'
-      'attack-surface': 'command-control'
-    })
-  }
-}
-
-// ELK Stack Server
-module elkServer 'modules/elk-server.bicep' = {
-  scope: resourceGroup
-  name: 'elk-server-deployment'
-  params: {
-    location: location
-    environment: environment
-    vmSize: vmSizes[environment].elk
-    adminUsername: adminUsername
-    adminPassword: adminPassword
-    sshPublicKey: sshPublicKey
-    subnetId: network.outputs.elkSubnetId
-    logAnalyticsWorkspaceId: logging.outputs.workspaceId
-    tags: union(commonTags, {
-      role: 'elk-stack'
-      'attack-surface': 'detection-logging'
+      role: 'caldera-elk-server'
     })
   }
 }
@@ -172,8 +150,8 @@ module windowsAgent 'modules/windows-agent.bicep' = {
     adminUsername: adminUsername
     adminPassword: adminPassword
     subnetId: network.outputs.agentsSubnetId
-    calderaServerIp: calderaServer.outputs.privateIpAddress
-    elkServerIp: elkServer.outputs.privateIpAddress
+    calderaServerIp: calderaElkServer.outputs.privateIpAddress
+    elkServerIp: calderaElkServer.outputs.privateIpAddress
     logAnalyticsWorkspaceId: logging.outputs.workspaceId
     enableAtomicRedTeam: enableAtomicRedTeam
     tags: union(commonTags, {
@@ -196,7 +174,7 @@ module linuxAgent 'modules/linux-agent.bicep' = {
     adminPassword: adminPassword
     sshPublicKey: sshPublicKey
     subnetId: network.outputs.agentsSubnetId
-    calderaServerIp: calderaServer.outputs.privateIpAddress
+    calderaServerIp: calderaElkServer.outputs.privateIpAddress
     logAnalyticsWorkspaceId: logging.outputs.workspaceId
     tags: union(commonTags, {
       role: 'blue-team-agent'
@@ -211,10 +189,9 @@ module linuxAgent 'modules/linux-agent.bicep' = {
 // ============================================================================
 
 output resourceGroupName string = resourceGroupName
-output calderaServerUrl string = 'http://${calderaServer.outputs.publicIpAddress}:8888'
-output calderaServerIp string = calderaServer.outputs.publicIpAddress
-output elkKibanaUrl string = 'http://${elkServer.outputs.publicIpAddress}:5601'
-output elkElasticsearchUrl string = 'http://${elkServer.outputs.publicIpAddress}:9200'
+output calderaElkServerUrl string = 'http://${calderaElkServer.outputs.publicIpAddress}:8888'
+output calderaElkKibanaUrl string = 'http://${calderaElkServer.outputs.publicIpAddress}:5601'
+output calderaElkServerIp string = calderaElkServer.outputs.publicIpAddress
 output windowsAgentIp string = windowsAgent.outputs.publicIpAddress
 output linuxAgentIp string = linuxAgent.outputs.publicIpAddress
 output logAnalyticsWorkspaceId string = logging.outputs.workspaceId
@@ -222,14 +199,11 @@ output deploymentId string = deploymentId
 output vnetId string = network.outputs.vnetId
 
 output accessInstructions object = {
-  caldera: {
-    url: 'http://${calderaServer.outputs.publicIpAddress}:8888'
-    defaultCreds: 'admin / admin'
-    ssh: 'ssh ${adminUsername}@${calderaServer.outputs.publicIpAddress}'
-  }
-  kibana: {
-    url: 'http://${elkServer.outputs.publicIpAddress}:5601'
-    elasticsearch: 'http://${elkServer.outputs.publicIpAddress}:9200'
+  caldera_elk: {
+    caldera_url: 'http://${calderaElkServer.outputs.publicIpAddress}:8888'
+    kibana_url: 'http://${calderaElkServer.outputs.publicIpAddress}:5601'
+    default_creds: 'red:admin / blue:admin'
+    ssh: 'ssh ${adminUsername}@${calderaElkServer.outputs.publicIpAddress}'
   }
   agents: {
     windows: {
