@@ -71,19 +71,16 @@ var commonTags = {
 // Environment-specific VM sizes
 var vmSizes = {
   dev: {
-    caldera: 'Standard_B2s'
+    calderaElk: 'Standard_D4s_v3' // Larger VM for combined workload
     agent: 'Standard_B2s'
-    elk: 'Standard_B2s'
   }
   stage: {
-    caldera: 'Standard_D4s_v5'
+    calderaElk: 'Standard_D8s_v3'
     agent: 'Standard_D2s_v5'
-    elk: 'Standard_D4s_v5'
   }
   'prod-lab': {
-    caldera: 'Standard_D4s_v5'
+    calderaElk: 'Standard_E8s_v3'
     agent: 'Standard_D2s_v5'
-    elk: 'Standard_E4s_v5'
   }
 }
 
