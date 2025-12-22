@@ -108,9 +108,9 @@ resource vmExtension 'Microsoft.Compute/virtualMachines/extensions@2023-07-01' =
   name: 'caldera-elk-setup'
   location: location
   properties: {
-    publisher: 'Microsoft.Compute'
-    type: 'CustomScriptExtension'
-    typeHandlerVersion: '1.10'
+    publisher: 'Microsoft.Azure.Extensions'
+    type: 'CustomScript'
+    typeHandlerVersion: '2.1'
     autoUpgradeMinorVersion: true
     settings: {
       fileUris: [
