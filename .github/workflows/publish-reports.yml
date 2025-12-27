@@ -1,0 +1,308 @@
+name: Publish Reports to GitHub Pages
+
+on:
+  # Manual trigger with inputs
+  workflow_dispatch:
+    inputs:
+      campaign_id:
+        description: 'Campaign ID to generate report for'
+        required: true
+        type: string
+      report_format:
+        description: 'Report format(s) to generate'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - pdf
+          - html
+          - json
+          - navigator
+          - all
+  
+  # Trigger on report file additions
+  push:
+    branches:
+      - main
+    paths:
+      - 'reports/**'
+
+# Sets permissions for GitHub Pages deployment
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Generate reports (manual trigger only)
+  generate-reports:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install weasyprint aiohttp jinja2
+      
+      - name: Generate report
+        env:
+          CALDERA_URL: ${{ secrets.CALDERA_URL }}
+          CALDERA_API_KEY_RED: ${{ secrets.CALDERA_API_KEY_RED }}
+        run: |
+          cd orchestrator
+          python export_report.py \
+            --campaign-id "${{ inputs.campaign_id }}" \
+            --format "${{ inputs.report_format }}" \
+            --output ../reports
+      
+      - name: Upload report artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: campaign-reports
+          path: reports/
+          retention-days: 30
+      
+      - name: Commit reports to repository
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add reports/
+          git diff --staged --quiet || git commit -m "Add reports for campaign ${{ inputs.campaign_id }}"
+          git push
+
+  # Build and deploy GitHub Pages
+  deploy-pages:
+    needs: [generate-reports]
+    if: always() && (needs.generate-reports.result == 'success' || needs.generate-reports.result == 'skipped')
+    runs-on: ubuntu-latest
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+      
+      - name: Pull latest changes
+        run: git pull origin ${{ github.ref_name }}
+      
+      - name: Set up Pages
+        uses: actions/configure-pages@v4
+      
+      - name: Create Pages structure
+        run: |
+          mkdir -p _site
+          
+          # Copy reports
+          if [ -d "reports" ]; then
+            cp -r reports _site/
+          fi
+          
+          # Generate index.html
+          cat > _site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Caldera POC - Campaign Reports</title>
+            <style>
+              :root {
+                --triskele-green: #48CFA0;
+                --dark-bg: #1a1a2e;
+                --card-bg: #16213e;
+              }
+              * { box-sizing: border-box; margin: 0; padding: 0; }
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: var(--dark-bg);
+                color: #e0e0e0;
+                line-height: 1.6;
+                min-height: 100vh;
+              }
+              .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+              header {
+                text-align: center;
+                padding: 3rem 0;
+                border-bottom: 2px solid var(--triskele-green);
+                margin-bottom: 2rem;
+              }
+              h1 {
+                color: var(--triskele-green);
+                font-size: 2.5rem;
+                margin-bottom: 0.5rem;
+              }
+              .subtitle { color: #888; font-size: 1.1rem; }
+              .reports-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 1.5rem;
+                margin-top: 2rem;
+              }
+              .report-card {
+                background: var(--card-bg);
+                border-radius: 12px;
+                padding: 1.5rem;
+                border: 1px solid #2a2a4a;
+                transition: transform 0.2s, border-color 0.2s;
+              }
+              .report-card:hover {
+                transform: translateY(-4px);
+                border-color: var(--triskele-green);
+              }
+              .report-card h3 {
+                color: var(--triskele-green);
+                margin-bottom: 0.5rem;
+              }
+              .report-card .meta {
+                color: #888;
+                font-size: 0.9rem;
+                margin-bottom: 1rem;
+              }
+              .report-card .formats {
+                display: flex;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+              }
+              .format-badge {
+                display: inline-block;
+                padding: 0.3rem 0.8rem;
+                background: rgba(72, 207, 160, 0.1);
+                border: 1px solid var(--triskele-green);
+                border-radius: 20px;
+                color: var(--triskele-green);
+                text-decoration: none;
+                font-size: 0.85rem;
+                transition: background 0.2s;
+              }
+              .format-badge:hover {
+                background: rgba(72, 207, 160, 0.3);
+              }
+              .empty-state {
+                text-align: center;
+                padding: 4rem 2rem;
+                color: #666;
+              }
+              .empty-state svg {
+                width: 80px;
+                height: 80px;
+                margin-bottom: 1rem;
+                opacity: 0.5;
+              }
+              footer {
+                text-align: center;
+                padding: 2rem;
+                margin-top: 3rem;
+                border-top: 1px solid #2a2a4a;
+                color: #666;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <header>
+                <h1>🎯 Caldera POC</h1>
+                <p class="subtitle">Purple Team Campaign Reports</p>
+              </header>
+              
+              <main>
+                <div id="reports-container">
+                  <div class="empty-state">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <h3>No Reports Yet</h3>
+                    <p>Run campaigns in Caldera to generate reports.</p>
+                  </div>
+                </div>
+              </main>
+              
+              <footer>
+                <p>Triskele Labs Purple Team Platform</p>
+                <p style="font-size: 0.85rem; margin-top: 0.5rem;">
+                  Powered by MITRE Caldera &amp; Elastic Stack
+                </p>
+              </footer>
+            </div>
+            
+            <script>
+              // This will be populated by the build process with actual report data
+              const reports = [];
+              
+              if (reports.length > 0) {
+                const container = document.getElementById('reports-container');
+                container.innerHTML = '<div class="reports-grid"></div>';
+                const grid = container.querySelector('.reports-grid');
+                
+                reports.forEach(report => {
+                  const card = document.createElement('div');
+                  card.className = 'report-card';
+                  card.innerHTML = `
+                    <h3>${report.name}</h3>
+                    <div class="meta">Generated: ${report.date}</div>
+                    <div class="formats">
+                      ${report.formats.map(f => 
+                        `<a href="${f.url}" class="format-badge">${f.type.toUpperCase()}</a>`
+                      ).join('')}
+                    </div>
+                  `;
+                  grid.appendChild(card);
+                });
+              }
+            </script>
+          </body>
+          </html>
+          EOF
+      
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Notify on completion
+  notify:
+    needs: [deploy-pages]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Send Slack notification
+        if: env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          STATUS="${{ needs.deploy-pages.result }}"
+          if [ "$STATUS" = "success" ]; then
+            ICON="✅"
+            MESSAGE="Reports published successfully"
+          else
+            ICON="❌"
+            MESSAGE="Report publishing failed"
+          fi
+          
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"$ICON $MESSAGE\n\nWorkflow: ${{ github.workflow }}\nRun: ${{ github.run_number }}\"}" \
+            $SLACK_WEBHOOK_URL || true

@@ -1,0 +1,53 @@
+# =============================================================================
+# B1s MINIMAL OVERRIDE - Azure B1s VM (1GB RAM) Optimized Stack
+# =============================================================================
+#
+# Use with: docker-compose -f docker-compose.yml -f docker-compose.b1s.yml up -d
+#
+# Memory Budget (1GB total):
+#   - Elasticsearch: 512MB (256MB heap + overhead)
+#   - Caldera: 256MB
+#   - OS/Docker: ~200MB
+#   - Headroom: 32MB
+#
+# NOTE: Kibana and webhook-service excluded by default to stay within limits.
+#       Run on B2s or use SSH tunnel to external Kibana if dashboards needed.
+# =============================================================================
+
+version: '3.8'
+
+services:
+  elasticsearch:
+    # Override heap for minimal B1s footprint
+    environment:
+      - "ES_JAVA_OPTS=-Xms128m -Xmx256m"
+      - xpack.security.enabled=false  # Disable security for simplicity on B1s
+      - xpack.ml.enabled=false  # Disable ML to save memory
+      - indices.query.bool.max_clause_count=1024
+    # Stricter memory limits
+    mem_limit: 400m
+    mem_reservation: 256m
+    # Disable swap
+    memswap_limit: 400m
+
+  caldera:
+    # Minimal Caldera for B1s
+    build:
+      args:
+        VARIANT: "slim"  # Use slim variant if available
+    mem_limit: 200m
+    mem_reservation: 128m
+    memswap_limit: 200m
+    environment:
+      # Disable heavy plugins for memory savings
+      - CALDERA_DISABLE_PLUGINS=training,compass,gameboard
+
+  # Disable Kibana on B1s - use SSH tunnel or external instance
+  kibana:
+    deploy:
+      replicas: 0
+
+  # Disable webhook service container - run as host Python process instead
+  webhook-service:
+    deploy:
+      replicas: 0

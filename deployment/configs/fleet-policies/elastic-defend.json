@@ -1,0 +1,140 @@
+{
+  "name": "Purple-Team-Elastic-Defend",
+  "description": "Elastic Defend EDR policy for purple team operations - replaces Sysmon for Linux",
+  "namespace": "default",
+  "policy_id": "purple-team-linux",
+  "enabled": true,
+  "inputs": [
+    {
+      "type": "endpoint",
+      "enabled": true,
+      "streams": [],
+      "config": {
+        "policy": {
+          "value": {
+            "windows": {
+              "events": {
+                "credential_access": true,
+                "dll_and_driver_load": true,
+                "dns": true,
+                "file": true,
+                "network": true,
+                "process": true,
+                "registry": true,
+                "security": true
+              },
+              "malware": {
+                "mode": "detect",
+                "blocklist": true
+              },
+              "ransomware": {
+                "mode": "detect",
+                "supported": true
+              },
+              "memory_protection": {
+                "mode": "detect",
+                "supported": true
+              },
+              "behavior_protection": {
+                "mode": "detect",
+                "supported": true,
+                "reputation_service": true
+              },
+              "attack_surface_reduction": {
+                "credential_hardening": {
+                  "enabled": true
+                }
+              },
+              "antivirus_registration": {
+                "enabled": false
+              },
+              "logging": {
+                "file": "info"
+              }
+            },
+            "linux": {
+              "events": {
+                "file": true,
+                "network": true,
+                "process": true,
+                "session_data": true,
+                "tty_io": false
+              },
+              "malware": {
+                "mode": "detect",
+                "blocklist": true
+              },
+              "behavior_protection": {
+                "mode": "detect",
+                "supported": true
+              },
+              "memory_protection": {
+                "mode": "detect",
+                "supported": true
+              },
+              "logging": {
+                "file": "info"
+              },
+              "advanced": {
+                "agent": {
+                  "connection_delay": "60s"
+                },
+                "alerts": {
+                  "require_user_artifacts": false
+                },
+                "artifacts": {
+                  "global": {
+                    "base_url": ""
+                  }
+                }
+              }
+            },
+            "mac": {
+              "events": {
+                "file": true,
+                "network": true,
+                "process": true
+              },
+              "malware": {
+                "mode": "detect",
+                "blocklist": true
+              },
+              "behavior_protection": {
+                "mode": "detect",
+                "supported": true
+              },
+              "memory_protection": {
+                "mode": "detect",
+                "supported": true
+              },
+              "logging": {
+                "file": "info"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "package": {
+    "name": "endpoint",
+    "title": "Elastic Defend",
+    "version": "8.11.0"
+  },
+  "vars": {},
+  "metadata": {
+    "purple_team": true,
+    "caldera_integration": true,
+    "attck_coverage": [
+      "T1003",
+      "T1059",
+      "T1547",
+      "T1078",
+      "T1548",
+      "T1055",
+      "T1071",
+      "T1105"
+    ],
+    "notes": "Elastic Defend replaces deprecated Sysmon for Linux. Provides comprehensive EDR telemetry for process, file, and network events."
+  }
+}

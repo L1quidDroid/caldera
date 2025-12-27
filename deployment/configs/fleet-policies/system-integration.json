@@ -1,0 +1,157 @@
+{
+  "name": "Purple-Team-System",
+  "description": "System integration for auth logs, process metrics, and service monitoring",
+  "namespace": "default",
+  "policy_id": "purple-team-linux",
+  "enabled": true,
+  "inputs": [
+    {
+      "type": "system/auth",
+      "enabled": true,
+      "streams": [
+        {
+          "enabled": true,
+          "data_stream": {
+            "type": "logs",
+            "dataset": "system.auth"
+          },
+          "vars": {
+            "paths": [
+              "/var/log/auth.log",
+              "/var/log/secure"
+            ],
+            "tags": ["caldera", "purple-team", "auth"],
+            "preserve_original_event": true
+          }
+        }
+      ]
+    },
+    {
+      "type": "system/syslog",
+      "enabled": true,
+      "streams": [
+        {
+          "enabled": true,
+          "data_stream": {
+            "type": "logs",
+            "dataset": "system.syslog"
+          },
+          "vars": {
+            "paths": [
+              "/var/log/syslog",
+              "/var/log/messages"
+            ],
+            "tags": ["caldera", "purple-team", "syslog"]
+          }
+        }
+      ]
+    },
+    {
+      "type": "system/process",
+      "enabled": true,
+      "streams": [
+        {
+          "enabled": true,
+          "data_stream": {
+            "type": "metrics",
+            "dataset": "system.process"
+          },
+          "vars": {
+            "period": "10s",
+            "processes": [".*"],
+            "process.include_top_n.by_cpu": 10,
+            "process.include_top_n.by_memory": 10,
+            "include_cpu_ticks": false,
+            "cmdline.cache.enabled": true
+          }
+        }
+      ]
+    },
+    {
+      "type": "system/cpu",
+      "enabled": true,
+      "streams": [
+        {
+          "enabled": true,
+          "data_stream": {
+            "type": "metrics",
+            "dataset": "system.cpu"
+          },
+          "vars": {
+            "period": "10s",
+            "cpu.metrics": [
+              "percentages",
+              "normalized_percentages"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "system/memory",
+      "enabled": true,
+      "streams": [
+        {
+          "enabled": true,
+          "data_stream": {
+            "type": "metrics",
+            "dataset": "system.memory"
+          },
+          "vars": {
+            "period": "10s"
+          }
+        }
+      ]
+    },
+    {
+      "type": "system/network",
+      "enabled": true,
+      "streams": [
+        {
+          "enabled": true,
+          "data_stream": {
+            "type": "metrics",
+            "dataset": "system.network"
+          },
+          "vars": {
+            "period": "10s"
+          }
+        }
+      ]
+    },
+    {
+      "type": "system/filesystem",
+      "enabled": true,
+      "streams": [
+        {
+          "enabled": true,
+          "data_stream": {
+            "type": "metrics",
+            "dataset": "system.filesystem"
+          },
+          "vars": {
+            "period": "60s"
+          }
+        }
+      ]
+    }
+  ],
+  "package": {
+    "name": "system",
+    "title": "System",
+    "version": "1.38.0"
+  },
+  "vars": {},
+  "metadata": {
+    "purple_team": true,
+    "caldera_integration": true,
+    "attck_coverage": [
+      "T1078",
+      "T1082",
+      "T1016",
+      "T1057",
+      "T1049"
+    ],
+    "notes": "System integration provides auth logs, process metrics, and resource monitoring. Essential for detecting Valid Accounts (T1078) and System Information Discovery (T1082)."
+  }
+}

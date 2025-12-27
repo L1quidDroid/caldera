@@ -1,14 +1,102 @@
-version: '3'
+version: '3.8'
+
+# =============================================================================
+# B1s-OPTIMIZED CALDERA + ELK STACK
+# Memory Budget: ~968MB (fits 1GB B1s with 32MB headroom)
+#   - Elasticsearch: 512MB
+#   - Caldera: 256MB  
+#   - OS/Docker: ~200MB
+# =============================================================================
 
 services:
+  # ---------------------------------------------------------------------------
+  # ELASTICSEARCH (Single-node, B1s-optimized)
+  # Memory: 512MB limit (256MB heap + overhead)
+  # ---------------------------------------------------------------------------
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: elasticsearch
+    environment:
+      - node.name=es01
+      - cluster.name=caldera-cluster
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=true
+      - xpack.security.enrollment.enabled=false
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-changeme}
+      # B1s heap optimization: 256MB heap (half of 512MB limit)
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    mem_limit: 512m
+    mem_reservation: 256m
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -u elastic:${ELASTIC_PASSWORD:-changeme} http://localhost:9200/_cluster/health | grep -q 'green\\|yellow'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - caldera-network
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # KIBANA (Optional - enable via profile for dashboards)
+  # Memory: 128MB limit (minimal for B1s)
+  # ---------------------------------------------------------------------------
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: kibana
+    profiles:
+      - kibana
+      - full
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD:-changeme}
+      - SERVER_NAME=kibana
+      - SERVER_HOST=0.0.0.0
+      # Memory optimization
+      - NODE_OPTIONS=--max-old-space-size=96
+    ports:
+      - "5601:5601"
+    mem_limit: 128m
+    mem_reservation: 64m
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:5601/api/status | grep -q 'available'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    networks:
+      - caldera-network
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # CALDERA (MITRE adversary emulation)
+  # Memory: 256MB limit
+  # ---------------------------------------------------------------------------
   caldera:
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        TZ: "UTC" # Timezone to use in container
+        TZ: "UTC"
         VARIANT: "full"
     image: caldera:latest
+    container_name: caldera
     ports:
       - "8888:8888"
       - "8443:8443"
@@ -20,4 +108,79 @@ services:
       - "2222:2222"
     volumes:
       - ./:/usr/src/app
+      - caldera-data:/usr/src/app/data
+    environment:
+      # Caldera configuration
+      - CALDERA_API_KEY_RED=${CALDERA_API_KEY_RED:-}
+      - CALDERA_API_KEY_BLUE=${CALDERA_API_KEY_BLUE:-}
+      - CALDERA_ENCRYPTION_KEY=${CALDERA_ENCRYPTION_KEY:-}
+      - CALDERA_CRYPT_SALT=${CALDERA_CRYPT_SALT:-}
+      # External integrations
+      - CALDERA_URL=${CALDERA_URL:-http://localhost:8888}
+      - ELASTIC_ENDPOINT=${ELASTIC_ENDPOINT:-http://elasticsearch:9200}
+      - ELASTIC_API_KEY=${ELASTIC_API_KEY:-}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-changeme}
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL:-}
+      - WEBHOOK_TOKEN=${WEBHOOK_TOKEN:-}
+      # Safety rails
+      - TEST_MODE=${TEST_MODE:-true}
+      # SSL configuration
+      - SSL_VERIFY=${SSL_VERIFY:-false}
+    mem_limit: 256m
+    mem_reservation: 128m
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:8888/api/v2/health | grep -q 'ok'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - caldera-network
     command: --log DEBUG
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # WEBHOOK SERVICE (Python automation - replaces n8n)
+  # Runs as lightweight container, handles all workflows
+  # ---------------------------------------------------------------------------
+  webhook-service:
+    build:
+      context: ./orchestrator
+      dockerfile: Dockerfile.webhook
+    container_name: webhook-service
+    profiles:
+      - automation
+      - full
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./orchestrator:/app
+      - ./reports:/app/reports
+    environment:
+      - CALDERA_URL=${CALDERA_URL:-http://caldera:8888}
+      - CALDERA_API_KEY=${CALDERA_API_KEY_RED:-}
+      - ELASTIC_ENDPOINT=${ELASTIC_ENDPOINT:-http://elasticsearch:9200}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-changeme}
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL:-}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - GITHUB_REPO=${GITHUB_REPO:-}
+    mem_limit: 64m
+    depends_on:
+      - caldera
+      - elasticsearch
+    networks:
+      - caldera-network
+    restart: unless-stopped
+
+volumes:
+  elasticsearch-data:
+    driver: local
+  caldera-data:
+    driver: local
+
+networks:
+  caldera-network:
+    driver: bridge
