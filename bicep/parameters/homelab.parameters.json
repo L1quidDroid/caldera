@@ -1,0 +1,59 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "_comment": "HOMELAB/STUDENT ACCOUNT PARAMETERS - Fits within 4 vCPU limit",
+  "parameters": {
+    "environment": {
+      "value": "dev"
+    },
+    "location": {
+      "value": "westus2"
+    },
+    "osDiskType": {
+      "value": "Standard_LRS",
+      "metadata": {
+        "_comment": "Use Standard_LRS for Free/Student accounts (Premium_LRS may not be available)"
+      }
+    },
+    "ownerTag": {
+      "value": "homelab"
+    },
+    "costCenter": {
+      "value": "personal-lab"
+    },
+    "attackTactic": {
+      "value": "TA0001"
+    },
+    "deployAgents": {
+      "value": false,
+      "metadata": {
+        "_comment": "CRITICAL: Set to false for Student/Free accounts (saves 2 vCPUs)",
+        "_vcpu_impact": "Reduces total from 4 vCPUs to 2 vCPUs"
+      }
+    },
+    "managementCidr": {
+      "value": "0.0.0.0/0",
+      "metadata": {
+        "_comment": "Replace with your public IP for security: YOUR_IP/32"
+      }
+    },
+    "adminUsername": {
+      "value": "calderaadmin"
+    },
+    "adminPassword": {
+      "value": "REPLACE_WITH_SECURE_PASSWORD",
+      "metadata": {
+        "_comment": "Use strong password or Key Vault reference"
+      }
+    },
+    "sshPublicKey": {
+      "value": ""
+    },
+    "calderaElkInstallScript": {
+      "value": "TO_BE_ENCODED",
+      "metadata": {
+        "_comment": "Base64 encoded install script - use deploy.sh to auto-encode"
+      }
+    }
+  }
+}

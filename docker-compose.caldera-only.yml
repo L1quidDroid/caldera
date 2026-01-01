@@ -1,0 +1,8 @@
+# Temporary override for testing Caldera standalone (without Elasticsearch)
+version: '3.8'
+
+services:
+  caldera:
+    depends_on: []  # Remove ES dependency
+    environment:
+      - ELASTIC_ENDPOINT=  # Disable ES integration

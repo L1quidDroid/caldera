@@ -11,6 +11,7 @@ Usage:
 """
 
 import argparse
+import os
 import sys
 import json
 from pathlib import Path
@@ -246,9 +247,10 @@ class AgentEnrollmentGenerator:
         """Fetch deployment commands from Caldera API."""
         url = f"{self.caldera_url}/api/v2/agents/deployment_commands"
         headers = {'KEY': self.api_key}
+        ssl_verify = os.getenv('SSL_VERIFY', 'true').lower() not in ('false', '0', 'no', 'off')
         
         try:
-            response = requests.get(url, headers=headers, timeout=10, verify=False)
+            response = requests.get(url, headers=headers, timeout=10, verify=ssl_verify)
             response.raise_for_status()
             return {
                 cmd['platform']: cmd['command']

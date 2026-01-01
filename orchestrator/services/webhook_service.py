@@ -757,6 +757,210 @@ class ConsolidatedWorkflowService:
             self.log.error(f"PDF generation failed: {e}")
             return None
 
+    async def on_sequence_complete(self, job_id: str, job: dict):
+        """
+        Handle sequence job completion event.
+        
+        Triggered by sequencer plugin when automated sequence finishes.
+        
+        Actions:
+        1. Tag ELK alerts for all operations in the sequence
+        2. Send Slack notification with summary
+        3. Generate combined coverage report for sequence
+        4. Export PDF with full sequence results
+        
+        Args:
+            job_id: Sequencer job ID
+            job: Job metadata dict with completed_steps, failed_steps, etc.
+        """
+        try:
+            campaign_id = job.get('campaign_id')
+            sequence_name = job.get('sequence_name', 'Unnamed Sequence')
+            completed_steps = job.get('completed_steps', [])
+            failed_steps = job.get('failed_steps', [])
+            
+            self.log.info(f"Processing sequence completion: {job_id} ({sequence_name})")
+            
+            # 1. Tag ELK alerts for all operations in sequence
+            if self.siem and completed_steps:
+                for step in completed_steps:
+                    operation_id = step.get('operation_id')
+                    if operation_id:
+                        try:
+                            results = await self.get_operation_results(operation_id)
+                            await self.tag_elk_alerts(operation_id, results)
+                        except Exception as e:
+                            self.log.warning(f"Failed to tag ELK for operation {operation_id}: {e}")
+            
+            # 2. Send Slack notification with sequence summary
+            if self.slack_webhook_url:
+                success_count = len(completed_steps)
+                total_steps = job.get('total_steps', success_count + len(failed_steps))
+                success_rate = (success_count / total_steps * 100) if total_steps > 0 else 0
+                
+                status_emoji = "✅" if not failed_steps else "⚠️"
+                status_color = "good" if not failed_steps else "warning"
+                
+                message = {
+                    "text": f"{status_emoji} Sequence Complete: {sequence_name}",
+                    "attachments": [{
+                        "color": status_color,
+                        "fields": [
+                            {
+                                "title": "Campaign",
+                                "value": campaign_id,
+                                "short": True
+                            },
+                            {
+                                "title": "Job ID",
+                                "value": job_id[:8],
+                                "short": True
+                            },
+                            {
+                                "title": "Success Rate",
+                                "value": f"{success_rate:.1f}% ({success_count}/{total_steps})",
+                                "short": True
+                            },
+                            {
+                                "title": "Duration",
+                                "value": self._calculate_duration(job),
+                                "short": True
+                            }
+                        ],
+                        "footer": "Caldera Sequencer"
+                    }]
+                }
+                
+                if failed_steps:
+                    message["attachments"][0]["fields"].append({
+                        "title": "Failed Steps",
+                        "value": "\n".join([f"• {s.get('name', 'Unknown')}" for s in failed_steps]),
+                        "short": False
+                    })
+                
+                try:
+                    await self._send_slack_notification(message)
+                except Exception as e:
+                    self.log.warning(f"Failed to send Slack notification: {e}")
+            
+            # 3. Generate combined ATT&CK coverage report
+            all_operation_ids = [step.get('operation_id') for step in completed_steps if step.get('operation_id')]
+            
+            if all_operation_ids:
+                try:
+                    # Aggregate results from all operations
+                    aggregated_results = await self._aggregate_operation_results(all_operation_ids)
+                    coverage_report = await self.generate_attack_coverage_report(aggregated_results)
+                    
+                    # Save to sequence-specific directory
+                    sequence_dir = self.reports_dir / 'sequences' / job_id
+                    sequence_dir.mkdir(parents=True, exist_ok=True)
+                    
+                    coverage_path = sequence_dir / 'attack_coverage.json'
+                    with open(coverage_path, 'w') as f:
+                        json.dump(coverage_report, f, indent=2)
+                    
+                    self.log.info(f"ATT&CK coverage report saved: {coverage_path}")
+                
+                except Exception as e:
+                    self.log.warning(f"Failed to generate coverage report: {e}")
+            
+            # 4. Generate PDF report for sequence
+            try:
+                pdf_path = await self._generate_sequence_pdf(job_id, job, all_operation_ids)
+                if pdf_path:
+                    self.log.info(f"Sequence PDF report: {pdf_path}")
+                    
+                    # Optionally publish to GitHub Pages
+                    if self.github_token and self.github_repo:
+                        await self.publish_to_github_pages(
+                            pdf_path,
+                            commit_message=f"Sequence report: {sequence_name}"
+                        )
+            
+            except Exception as e:
+                self.log.warning(f"Failed to generate sequence PDF: {e}")
+            
+            self.log.info(f"Sequence processing complete: {job_id}")
+            
+        except Exception as e:
+            self.log.error(f"Error processing sequence completion: {e}", exc_info=True)
+
+    def _calculate_duration(self, job: dict) -> str:
+        """Calculate human-readable duration from job timestamps."""
+        try:
+            from datetime import datetime
+            start = datetime.fromisoformat(job.get('started_at', '').replace('Z', '+00:00'))
+            end = datetime.fromisoformat(job.get('completed_at', datetime.utcnow().isoformat()).replace('Z', '+00:00'))
+            duration = (end - start).total_seconds()
+            
+            if duration < 60:
+                return f"{int(duration)}s"
+            elif duration < 3600:
+                return f"{int(duration / 60)}m {int(duration % 60)}s"
+            else:
+                hours = int(duration / 3600)
+                minutes = int((duration % 3600) / 60)
+                return f"{hours}h {minutes}m"
+        except Exception:
+            return "Unknown"
+
+    async def _aggregate_operation_results(self, operation_ids: List[str]) -> Dict[str, Any]:
+        """Aggregate results from multiple operations."""
+        aggregated = {
+            'operations': [],
+            'all_techniques': set(),
+            'all_tactics': set(),
+            'total_links': 0,
+            'successful_links': 0
+        }
+        
+        for op_id in operation_ids:
+            try:
+                results = await self.get_operation_results(op_id)
+                aggregated['operations'].append(results)
+                
+                # Extract techniques and tactics
+                for link in results.get('links', []):
+                    if 'attack' in link:
+                        for attack_info in link['attack']:
+                            technique_id = attack_info.get('technique_id')
+                            tactic = attack_info.get('tactic')
+                            if technique_id:
+                                aggregated['all_techniques'].add(technique_id)
+                            if tactic:
+                                aggregated['all_tactics'].add(tactic)
+                    
+                    aggregated['total_links'] += 1
+                    if link.get('status') == 0:  # Success
+                        aggregated['successful_links'] += 1
+            
+            except Exception as e:
+                self.log.warning(f"Failed to fetch results for operation {op_id}: {e}")
+        
+        # Convert sets to lists for JSON serialization
+        aggregated['all_techniques'] = list(aggregated['all_techniques'])
+        aggregated['all_tactics'] = list(aggregated['all_tactics'])
+        
+        return aggregated
+
+    async def _generate_sequence_pdf(self, job_id: str, job: dict, operation_ids: List[str]) -> Optional[str]:
+        """Generate PDF report for completed sequence."""
+        # Implementation similar to generate_pdf_report but for sequences
+        # TODO: Implement custom sequence PDF template
+        self.log.info(f"Sequence PDF generation placeholder for {job_id}")
+        return None
+
+    async def _send_slack_notification(self, message: dict):
+        """Send message to Slack webhook."""
+        if not self.slack_webhook_url:
+            return
+        
+        async with self.session.post(self.slack_webhook_url, json=message) as resp:
+            if resp.status != 200:
+                text = await resp.text()
+                raise Exception(f"Slack API error {resp.status}: {text}")
+
     async def publish_to_github_pages(
         self,
         report_path: str,

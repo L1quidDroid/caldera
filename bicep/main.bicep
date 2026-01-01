@@ -6,7 +6,7 @@
 // Last Updated: 2025-12-22
 // ============================================================================
 
-targetScope = 'subscription'
+targetScope = 'resourceGroup'
 
 @description('Environment name (dev, stage, prod-lab)')
 @allowed([
@@ -17,14 +17,10 @@ targetScope = 'subscription'
 param environment string = 'dev'
 
 @description('Azure region for deployment')
-@allowed([
-  'australiaeast'
-  'australiasoutheast'
-])
-param location string = 'australiaeast'
+param location string = resourceGroup().location
 
-@description('Unique deployment identifier (timestamp)')
-param deploymentId string = utcNow('yyyyMMdd-HHmm')
+@description('Unique deployment identifier (stable for student policy)')
+param deploymentId string = 'caldera-dev'
 
 @description('Owner tag for resource management')
 param ownerTag string = 'tonyto'
@@ -35,8 +31,15 @@ param costCenter string = 'cybersec-purple-team'
 @description('MITRE ATT&CK tactic for this lab instance')
 param attackTactic string = 'TA0001'
 
-@description('Enable Atomic Red Team auto-execution')
-param enableAtomicRedTeam bool = false
+@description('Deploy agent VMs (Windows/Linux). Set false if hitting quota constraints.')
+param deployAgents bool = true
+
+@description('Storage type for OS disks. Use Standard_LRS for Free/Student accounts if Premium fails.')
+@allowed(['Premium_LRS', 'Standard_LRS', 'StandardSSD_LRS'])
+param osDiskType string = 'Premium_LRS'
+
+@description('CIDR allowed to reach management and UI ports (SSH/RDP/HTTP/Kibana/Caldera). Override with your public IP CIDR for tighter access.')
+param managementCidr string = '0.0.0.0/0'
 
 @description('Admin username for all VMs')
 @secure()
@@ -46,17 +49,17 @@ param adminUsername string
 @secure()
 param adminPassword string
 
-@description('SSH public key for Linux VMs')
-param sshPublicKey string = ''
+@description('Base64-encoded content of the Caldera/ELK installation script')
+@secure()
+param calderaElkInstallScript string
 
-@description('Key Vault resource ID for secrets')
-param keyVaultId string = ''
+@description('SSH public key for Linux VMs')
+param sshPublicKey string
 
 // ============================================================================
 // VARIABLES
 // ============================================================================
 
-var resourceGroupName = 'rg-caldera-${environment}-${deploymentId}'
 var commonTags = {
   environment: environment
   owner: ownerTag
@@ -71,8 +74,8 @@ var commonTags = {
 // Environment-specific VM sizes
 var vmSizes = {
   dev: {
-    calderaElk: 'Standard_D4s_v3' // Larger VM for combined workload
-    agent: 'Standard_B2s'
+    calderaElk: 'Standard_D2s_v3' // available in japaneast; 2 vCPU fits student quota with agents off
+    agent: 'Standard_B1s'
   }
   stage: {
     calderaElk: 'Standard_D8s_v3'
@@ -85,33 +88,22 @@ var vmSizes = {
 }
 
 // ============================================================================
-// RESOURCE GROUP
-// ============================================================================
-
-resource resourceGroup 'Microsoft.Resources/resourceGroups@2023-07-01' = {
-  name: resourceGroupName
-  location: location
-  tags: commonTags
-}
-
-// ============================================================================
 // MODULES
 // ============================================================================
 
 // Network Infrastructure
 module network 'modules/network.bicep' = {
-  scope: resourceGroup
   name: 'network-deployment'
   params: {
     location: location
     environment: environment
+    managementCidr: managementCidr
     tags: commonTags
   }
 }
 
 // Log Analytics Workspace
 module logging 'modules/logging.bicep' = {
-  scope: resourceGroup
   name: 'logging-deployment'
   params: {
     location: location
@@ -123,7 +115,6 @@ module logging 'modules/logging.bicep' = {
 
 // CALDERA & ELK Server (Consolidated)
 module calderaElkServer 'modules/caldera-elk-server.bicep' = {
-  scope: resourceGroup
   name: 'caldera-elk-server-deployment'
   params: {
     location: location
@@ -133,6 +124,9 @@ module calderaElkServer 'modules/caldera-elk-server.bicep' = {
     adminPassword: adminPassword
     sshPublicKey: sshPublicKey
     subnetId: network.outputs.calderaSubnetId // Using caldera subnet
+    installScript: calderaElkInstallScript
+    logAnalyticsWorkspaceId: logging.outputs.workspaceId
+    osDiskType: osDiskType
     tags: union(commonTags, {
       role: 'caldera-elk-server'
     })
@@ -140,8 +134,7 @@ module calderaElkServer 'modules/caldera-elk-server.bicep' = {
 }
 
 // Windows Agent VM (Red Team target)
-module windowsAgent 'modules/windows-agent.bicep' = {
-  scope: resourceGroup
+module windowsAgentDeployment 'modules/windows-agent.bicep' = if (deployAgents) {
   name: 'windows-agent-deployment'
   params: {
     location: location
@@ -150,10 +143,7 @@ module windowsAgent 'modules/windows-agent.bicep' = {
     adminUsername: adminUsername
     adminPassword: adminPassword
     subnetId: network.outputs.agentsSubnetId
-    calderaServerIp: calderaElkServer.outputs.privateIpAddress
-    elkServerIp: calderaElkServer.outputs.privateIpAddress
     logAnalyticsWorkspaceId: logging.outputs.workspaceId
-    enableAtomicRedTeam: enableAtomicRedTeam
     tags: union(commonTags, {
       role: 'red-team-agent'
       os: 'windows-server-2022'
@@ -163,8 +153,7 @@ module windowsAgent 'modules/windows-agent.bicep' = {
 }
 
 // Linux Agent VM (Blue Team monitoring)
-module linuxAgent 'modules/linux-agent.bicep' = {
-  scope: resourceGroup
+module linuxAgentDeployment 'modules/linux-agent.bicep' = if (deployAgents) {
   name: 'linux-agent-deployment'
   params: {
     location: location
@@ -175,7 +164,6 @@ module linuxAgent 'modules/linux-agent.bicep' = {
     sshPublicKey: sshPublicKey
     subnetId: network.outputs.agentsSubnetId
     calderaServerIp: calderaElkServer.outputs.privateIpAddress
-    logAnalyticsWorkspaceId: logging.outputs.workspaceId
     tags: union(commonTags, {
       role: 'blue-team-agent'
       os: 'ubuntu-22.04'
@@ -184,16 +172,25 @@ module linuxAgent 'modules/linux-agent.bicep' = {
   }
 }
 
+var windowsAgentOutputs = deployAgents ? windowsAgentDeployment.outputs : {
+  publicIpAddress: ''
+}
+var linuxAgentOutputs = deployAgents ? linuxAgentDeployment.outputs : {
+  publicIpAddress: ''
+}
+var windowsAgentIpValue = windowsAgentOutputs.publicIpAddress
+var linuxAgentIpValue = linuxAgentOutputs.publicIpAddress
+
 // ============================================================================
 // OUTPUTS
 // ============================================================================
 
-output resourceGroupName string = resourceGroupName
+output resourceGroupName string = resourceGroup().name
 output calderaElkServerUrl string = 'http://${calderaElkServer.outputs.publicIpAddress}:8888'
 output calderaElkKibanaUrl string = 'http://${calderaElkServer.outputs.publicIpAddress}:5601'
 output calderaElkServerIp string = calderaElkServer.outputs.publicIpAddress
-output windowsAgentIp string = windowsAgent.outputs.publicIpAddress
-output linuxAgentIp string = linuxAgent.outputs.publicIpAddress
+output windowsAgentIp string = windowsAgentIpValue
+output linuxAgentIp string = linuxAgentIpValue
 output logAnalyticsWorkspaceId string = logging.outputs.workspaceId
 output deploymentId string = deploymentId
 output vnetId string = network.outputs.vnetId
@@ -203,16 +200,16 @@ output accessInstructions object = {
     caldera_url: 'http://${calderaElkServer.outputs.publicIpAddress}:8888'
     kibana_url: 'http://${calderaElkServer.outputs.publicIpAddress}:5601'
     default_creds: 'red:admin / blue:admin'
-    ssh: 'ssh ${adminUsername}@${calderaElkServer.outputs.publicIpAddress}'
+    ssh_command: 'Use your provided admin username and the server IP.'
   }
   agents: {
     windows: {
-      rdp: 'mstsc /v:${windowsAgent.outputs.publicIpAddress}'
-      ip: windowsAgent.outputs.publicIpAddress
+      rdp_command: 'Use your provided admin username and the agent IP.'
+      ip: windowsAgentIpValue
     }
     linux: {
-      ssh: 'ssh ${adminUsername}@${linuxAgent.outputs.publicIpAddress}'
-      ip: linuxAgent.outputs.publicIpAddress
+      ssh_command: 'Use your provided admin username and the agent IP.'
+      ip: linuxAgentIpValue
     }
   }
 }

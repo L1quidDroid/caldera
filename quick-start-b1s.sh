@@ -37,10 +37,19 @@ preflight_checks() {
         exit 1
     fi
     
-    # Check available memory
-    TOTAL_MEM=$(free -m | awk '/^Mem:/{print $2}')
-    if [ "$TOTAL_MEM" -lt 900 ]; then
-        log_warn "Low memory detected: ${TOTAL_MEM}MB. B1s requires careful tuning."
+    # Determine compose command (docker-compose vs docker compose)
+    if command -v docker-compose &> /dev/null; then
+        COMPOSE_CMD="docker-compose"
+    else
+        COMPOSE_CMD="docker compose"
+    fi
+    
+    # Check available memory (Linux only)
+    if command -v free &> /dev/null; then
+        TOTAL_MEM=$(free -m | awk '/^Mem:/{print $2}')
+        if [ "$TOTAL_MEM" -lt 900 ]; then
+            log_warn "Low memory detected: ${TOTAL_MEM}MB. B1s requires careful tuning."
+        fi
     fi
     
     # Check if .env exists
@@ -63,9 +72,9 @@ start_b1s_stack() {
     
     # Use B1s override
     if [ -f "docker-compose.b1s.yml" ]; then
-        docker-compose -f docker-compose.yml -f docker-compose.b1s.yml up -d
+        $COMPOSE_CMD -f docker-compose.yml -f docker-compose.b1s.yml up -d
     else
-        docker-compose up -d elasticsearch caldera
+        $COMPOSE_CMD up -d elasticsearch caldera
     fi
     
     log_info "Waiting for services to start..."
@@ -109,7 +118,12 @@ show_memory() {
     
     echo ""
     log_info "System memory:"
-    free -h
+    if command -v free &> /dev/null; then
+        free -h
+    else
+        # macOS alternative
+        vm_stat | head -10
+    fi
 }
 
 # =============================================================================
@@ -150,7 +164,7 @@ stop_all() {
     fi
     
     # Stop Docker containers
-    docker-compose down
+    $COMPOSE_CMD down
     
     log_info "All services stopped ✅"
 }
@@ -186,7 +200,7 @@ case "${1:-}" in
         curl -s "http://localhost:5000/health" && echo " <- Webhook" || echo "Webhook: DOWN"
         ;;
     logs)
-        docker-compose logs -f --tail=100
+        $COMPOSE_CMD logs -f --tail=100
         ;;
     *)
         echo "Caldera POC B1s Quick Start"

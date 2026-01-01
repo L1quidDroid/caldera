@@ -1,0 +1,20 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environment": { "value": "dev" },
+    "location": { "value": "australiaeast" },
+    "ownerTag": { "value": "tonyto" },
+    "costCenter": { "value": "cybersec-purple-team" },
+    "attackTactic": { "value": "TA0001" },
+    "enableAtomicRedTeam": { "value": false },
+    "deployAgents": { "value": true },
+    "managementCidr": { "value": "1.2.3.4/32" },
+    "adminUsername": { "value": "calderaadmin" },
+    "adminPassword": { "value": "REPLACE_WITH_SECURE_PASSWORD" },
+    "sshPublicKey": { "value": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQREPLACE_ME" },
+    "calderaElkInstallScript": { "value": "BASE64_CALDERA_ELK_SCRIPT" },
+    "windowsAgentInstallScript": { "value": "BASE64_WINDOWS_AGENT_SCRIPT" },
+    "linuxAgentInstallScript": { "value": "BASE64_LINUX_AGENT_SCRIPT" }
+  }
+}

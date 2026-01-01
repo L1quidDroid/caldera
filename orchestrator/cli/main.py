@@ -609,6 +609,292 @@ class CalderaOrchestratorCLI:
                     logger.exception("JSON report generation failed")
                     raise
 
+    async def sequence_campaign(
+        self,
+        campaign_id: str,
+        sequence_file: str,
+        max_retries: int = 3,
+        timeout: int = 300
+    ):
+        """
+        Execute automated multi-step operation sequence with failure recovery.
+        
+        Args:
+            campaign_id: Campaign ID
+            sequence_file: YAML file defining operation sequence
+            max_retries: Maximum retry attempts per step (default: 3)
+            timeout: Timeout per operation in seconds (default: 300)
+        """
+        campaign = self._load_campaign(campaign_id)
+        sequence = self._load_sequence_spec(sequence_file)
+        
+        console.print(f"\n[bold blue]Running Automated Sequence[/bold blue]\n")
+        console.print(f"Campaign: {campaign.name}")
+        console.print(f"Sequence: {sequence.get('name', 'Unnamed')}")
+        console.print(f"Steps: {len(sequence['steps'])}\n")
+        
+        caldera_url = campaign.environment.get('caldera_url') or self.config['caldera_url']
+        api_key = campaign.environment.get('api_key_red') or self.config['api_key_red']
+        
+        # Track facts across operations for chaining
+        global_facts = {}
+        completed_steps = []
+        failed_steps = []
+        
+        for idx, step in enumerate(sequence['steps'], 1):
+            step_name = step.get('name', f'Step {idx}')
+            console.print(f"[bold cyan]Step {idx}/{len(sequence['steps'])}: {step_name}[/bold cyan]")
+            
+            retry_count = 0
+            step_success = False
+            operation_id = None
+            
+            while retry_count <= max_retries and not step_success:
+                try:
+                    # Create operation
+                    operation_data = {
+                        'name': f"{campaign.name} - {step_name}",
+                        'adversary': {'adversary_id': step.get('adversary_id')},
+                        'group': step.get('agent_group', campaign.targets.get('agent_groups', ['red'])[0]),
+                        'planner': {'id': step.get('planner', 'atomic')},
+                        'source': {'id': step.get('source')} if step.get('source') else None,
+                        'auto_close': False,
+                        'state': 'running',
+                        'autonomous': step.get('autonomous', 1)
+                    }
+                    
+                    # Inject facts from previous steps if configured
+                    if step.get('inherit_facts') and global_facts:
+                        fact_filters = step.get('fact_filters', [])
+                        filtered_facts = self._filter_facts(global_facts, fact_filters)
+                        if filtered_facts:
+                            operation_data['facts'] = filtered_facts
+                            console.print(f"  ↳ Inherited {len(filtered_facts)} facts from previous steps")
+                    
+                    # Remove None values
+                    operation_data = {k: v for k, v in operation_data.items() if v is not None}
+                    
+                    # POST operation
+                    if retry_count > 0:
+                        console.print(f"  ⟳ Retry {retry_count}/{max_retries}")
+                    
+                    op_resp = await self._api_request(
+                        'POST',
+                        '/api/v2/operations',
+                        caldera_url=caldera_url,
+                        api_key=api_key,
+                        data=operation_data
+                    )
+                    operation_id = op_resp.get('id')
+                    console.print(f"  ✓ Operation created: {operation_id[:12]}...")
+                    
+                    # Poll for completion
+                    elapsed = 0
+                    poll_interval = 5
+                    operation = None
+                    
+                    with Progress(
+                        SpinnerColumn(),
+                        TextColumn("[progress.description]{task.description}"),
+                        console=console
+                    ) as progress:
+                        task = progress.add_task(f"  ⏳ Running (timeout: {timeout}s)...", total=None)
+                        
+                        while elapsed < timeout:
+                            await asyncio.sleep(poll_interval)
+                            elapsed += poll_interval
+                            
+                            # Get operation status
+                            operation = await self._api_request(
+                                'GET',
+                                f'/api/v2/operations/{operation_id}',
+                                caldera_url=caldera_url,
+                                api_key=api_key
+                            )
+                            
+                            state = operation.get('state', '')
+                            
+                            if state in ['finished', 'cleanup']:
+                                progress.update(task, description=f"  ✓ Completed ({elapsed}s)")
+                                step_success = True
+                                break
+                            elif state == 'out_of_time':
+                                progress.update(task, description=f"  ⚠ Timeout")
+                                raise Exception(f"Operation timed out (state: {state})")
+                            elif state == 'run_one_link':
+                                progress.update(task, description=f"  ⏸ Paused - manual intervention needed")
+                                raise Exception(f"Operation requires manual intervention (state: {state})")
+                        
+                        if not step_success:
+                            progress.update(task, description=f"  ✗ Timeout ({timeout}s exceeded)")
+                            raise asyncio.TimeoutError(f"Operation exceeded {timeout}s timeout")
+                    
+                    # Extract facts for next step
+                    if step_success and operation:
+                        try:
+                            # Get facts via facts API or operation report
+                            facts_resp = await self._api_request(
+                                'GET',
+                                f'/api/v2/operations/{operation_id}/report',
+                                caldera_url=caldera_url,
+                                api_key=api_key
+                            )
+                            
+                            new_facts = facts_resp.get('facts', [])
+                            if new_facts:
+                                # Merge into global facts
+                                for fact in new_facts:
+                                    trait = fact.get('trait', '')
+                                    value = fact.get('value', '')
+                                    if trait and value:
+                                        if trait not in global_facts:
+                                            global_facts[trait] = []
+                                        global_facts[trait].append(value)
+                                
+                                console.print(f"  ↳ Collected {len(new_facts)} new facts")
+                        
+                        except Exception as e:
+                            logger.warning(f"Failed to extract facts: {e}")
+                    
+                    # Success - break retry loop
+                    completed_steps.append({
+                        'step': idx,
+                        'name': step_name,
+                        'operation_id': operation_id,
+                        'status': 'completed'
+                    })
+                    break
+                
+                except asyncio.TimeoutError as e:
+                    retry_count += 1
+                    console.print(f"  ✗ Timeout: {e}")
+                    
+                    # Exponential backoff
+                    if retry_count <= max_retries:
+                        backoff = min(2 ** retry_count, 30)  # Max 30s backoff
+                        console.print(f"  ⏱ Waiting {backoff}s before retry...")
+                        await asyncio.sleep(backoff)
+                
+                except Exception as e:
+                    retry_count += 1
+                    console.print(f"  ✗ Error: {e}")
+                    
+                    # Check for tactic fallback
+                    if step.get('on_fail') == 'fallback' and step.get('fallback_adversary_id'):
+                        console.print(f"  ↳ Attempting tactic fallback...")
+                        step['adversary_id'] = step['fallback_adversary_id']
+                        # Don't increment retry count for fallback
+                        retry_count -= 1
+                    elif step.get('on_fail') == 'skip':
+                        console.print(f"  ⏭ Skipping step (on_fail: skip)")
+                        failed_steps.append({
+                            'step': idx,
+                            'name': step_name,
+                            'error': str(e),
+                            'status': 'skipped'
+                        })
+                        break
+                    else:
+                        # Exponential backoff
+                        if retry_count <= max_retries:
+                            backoff = min(2 ** retry_count, 30)
+                            console.print(f"  ⏱ Waiting {backoff}s before retry...")
+                            await asyncio.sleep(backoff)
+            
+            # Check if step ultimately failed
+            if not step_success and step.get('on_fail') != 'skip':
+                failed_steps.append({
+                    'step': idx,
+                    'name': step_name,
+                    'operation_id': operation_id,
+                    'error': 'Max retries exceeded',
+                    'status': 'failed'
+                })
+                
+                # Check if we should continue or abort
+                if step.get('critical', False):
+                    console.print(f"\n[bold red]✗ Critical step failed - aborting sequence[/bold red]\n")
+                    break
+                else:
+                    console.print(f"  ⚠ Step failed but continuing (non-critical)")
+            
+            console.print()  # Blank line between steps
+        
+        # Summary
+        console.print(f"[bold green]Sequence Complete[/bold green]\n")
+        console.print(f"  ✓ Completed: {len(completed_steps)}/{len(sequence['steps'])}")
+        console.print(f"  ✗ Failed: {len(failed_steps)}")
+        console.print(f"  📊 Facts collected: {sum(len(v) for v in global_facts.values())}")
+        
+        if failed_steps:
+            console.print(f"\n[bold yellow]Failed Steps:[/bold yellow]")
+            for failed in failed_steps:
+                console.print(f"  • Step {failed['step']}: {failed['name']} - {failed.get('error', 'Unknown')}")
+        
+        # Save sequence results to campaign
+        campaign.state['sequence_results'] = {
+            'sequence_name': sequence.get('name'),
+            'completed_steps': completed_steps,
+            'failed_steps': failed_steps,
+            'total_facts': len(global_facts)
+        }
+        self._save_campaign_spec(campaign)
+        
+        console.print()
+        
+        return len(failed_steps) == 0  # Return success status
+
+    def _load_sequence_spec(self, sequence_path: str) -> Dict:
+        """Load and validate sequence specification from YAML file."""
+        sequence_path = Path(sequence_path)
+        if not sequence_path.exists():
+            raise FileNotFoundError(f"Sequence spec not found: {sequence_path}")
+        
+        with open(sequence_path, 'r') as f:
+            spec = yaml.safe_load(f)
+        
+        # Basic validation
+        if 'steps' not in spec or not isinstance(spec['steps'], list):
+            raise ValueError("Sequence must contain 'steps' list")
+        
+        for idx, step in enumerate(spec['steps'], 1):
+            if 'adversary_id' not in step:
+                raise ValueError(f"Step {idx} missing required field: 'adversary_id'")
+        
+        return spec
+
+    def _filter_facts(self, facts: Dict, filters: list) -> list:
+        """
+        Filter facts based on trait patterns.
+        
+        Args:
+            facts: Dictionary of {trait: [values]}
+            filters: List of trait patterns (e.g., ['host.*', 'process.command_line'])
+        
+        Returns:
+            List of fact objects for Caldera API
+        """
+        if not filters:
+            # Return all facts if no filters specified
+            return [{'trait': trait, 'value': val} for trait, vals in facts.items() for val in vals]
+        
+        filtered = []
+        for pattern in filters:
+            # Simple glob-style matching
+            for trait, values in facts.items():
+                if self._matches_pattern(trait, pattern):
+                    for val in values:
+                        filtered.append({'trait': trait, 'value': val})
+        
+        return filtered
+
+    def _matches_pattern(self, trait: str, pattern: str) -> bool:
+        """Simple glob-style pattern matching for fact traits."""
+        import re
+        # Convert glob pattern to regex
+        regex_pattern = pattern.replace('.', r'\.').replace('*', '.*')
+        return bool(re.match(f'^{regex_pattern}$', trait))
+
 
 def main():
     """Main CLI entry point."""
@@ -652,6 +938,12 @@ def main():
     stop_parser = campaign_sub.add_parser('stop', help='Stop campaign')
     stop_parser.add_argument('campaign_id', help='Campaign ID')
     stop_parser.add_argument('--force', '-f', action='store_true', help='Force stop')
+    
+    sequence_parser = campaign_sub.add_parser('sequence', help='Run automated operation sequence')
+    sequence_parser.add_argument('campaign_id', help='Campaign ID')
+    sequence_parser.add_argument('sequence_file', help='Sequence specification YAML file')
+    sequence_parser.add_argument('--max-retries', type=int, default=3, help='Max retry attempts per step')
+    sequence_parser.add_argument('--timeout', type=int, default=300, help='Timeout per operation (seconds)')
     
     # Operation commands
     op_parser = subparsers.add_parser('operation', help='Operation management')
@@ -710,6 +1002,14 @@ def main():
                 asyncio.run(cli.campaign_status(args.campaign_id, args.verbose))
             elif args.subcommand == 'stop':
                 asyncio.run(cli.campaign_stop(args.campaign_id, args.force))
+            elif args.subcommand == 'sequence':
+                success = asyncio.run(cli.sequence_campaign(
+                    args.campaign_id,
+                    args.sequence_file,
+                    args.max_retries,
+                    args.timeout
+                ))
+                sys.exit(0 if success else 1)
         
         elif args.command == 'operation':
             if args.subcommand == 'create':

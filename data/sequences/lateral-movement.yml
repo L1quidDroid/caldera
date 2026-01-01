@@ -1,0 +1,73 @@
+# Lateral Movement Sequence
+# Demonstrates credential theft → lateral movement → persistence
+
+name: "Lateral Movement Chain"
+description: "Automated credential theft, lateral movement, and persistence establishment"
+
+steps:
+  # Step 1: Dump credentials from current host
+  - name: "Credential Dumping (LSASS)"
+    adversary_id: "credential-access-adversary"
+    agent_group: "red"
+    planner: "atomic"
+    autonomous: 1
+    critical: true  # Must succeed
+    on_fail: "retry"
+    
+  # Step 2: Parse and extract credentials from dump
+  - name: "Parse Credentials"
+    adversary_id: "credential-parsing-adversary"
+    agent_group: "red"
+    planner: "atomic"
+    inherit_facts: true
+    fact_filters:
+      - "file.path"  # Path to credential dump
+    on_fail: "retry"
+    critical: true
+    
+  # Step 3: Discover lateral movement targets
+  - name: "Network Discovery"
+    adversary_id: "discovery-adversary"
+    agent_group: "red"
+    planner: "atomic"
+    inherit_facts: true
+    fact_filters:
+      - "domain.name"
+      - "domain.admin"
+    on_fail: "fallback"
+    fallback_adversary_id: "discovery-passive-adversary"
+    critical: false
+    
+  # Step 4: Attempt lateral movement with harvested credentials
+  - name: "PSExec Lateral Movement"
+    adversary_id: "lateral-movement-adversary"
+    agent_group: "red"
+    planner: "batch"  # Try multiple targets
+    inherit_facts: true
+    fact_filters:
+      - "user.name"
+      - "user.password"
+      - "host.hostname"
+      - "host.ip"
+    on_fail: "fallback"
+    fallback_adversary_id: "lateral-movement-wmi"  # Try WMI if PSExec fails
+    critical: false
+    
+  # Step 5: Establish persistence on compromised hosts
+  - name: "Registry Persistence"
+    adversary_id: "persistence-adversary"
+    agent_group: "red"
+    planner: "atomic"
+    inherit_facts: true
+    fact_filters:
+      - "host.hostname"  # Target hosts from lateral movement
+    on_fail: "skip"  # Non-critical
+    critical: false
+    
+  # Step 6: Verify persistence mechanisms
+  - name: "Validate Persistence"
+    adversary_id: "persistence-check-adversary"
+    agent_group: "red"
+    planner: "atomic"
+    on_fail: "skip"
+    critical: false

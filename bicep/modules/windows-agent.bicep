@@ -11,10 +11,8 @@ param adminUsername string
 @secure()
 param adminPassword string
 param subnetId string
-param calderaServerIp string
-param elkServerIp string
-param logAnalyticsWorkspaceId string
-param enableAtomicRedTeam bool = false
+@description('Optional Log Analytics Workspace resource ID for diagnostics')
+param logAnalyticsWorkspaceId string = ''
 param tags object
 
 var vmName = 'vm-windows-agent-${environment}'
@@ -83,6 +81,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-07-01' = {
     diagnosticsProfile: { bootDiagnostics: { enabled: true } }
   }
 }
+
 // Custom Script Extension - Install Sandcat agent and Winlogbeat
 resource vmExtension 'Microsoft.Compute/virtualMachines/extensions@2023-07-01' = {
   parent: vm
@@ -93,12 +92,32 @@ resource vmExtension 'Microsoft.Compute/virtualMachines/extensions@2023-07-01' =
     type: 'CustomScriptExtension'
     typeHandlerVersion: '1.10'
     autoUpgradeMinorVersion: true
-    settings: {
-      fileUris: [
-        'https://raw.githubusercontent.com/L1quidDroid/caldera/main/bicep/scripts/install-windows-agent.ps1'
-      ]
-      commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File install-windows-agent.ps1 -calderaServerIp ${calderaServerIp} -elkServerIp ${elkServerIp}'
+    protectedSettings: {
+      // Decode base64 script into a temp file, then execute with Caldera/ELK IPs
+      commandToExecute: '''
+powershell.exe -ExecutionPolicy Bypass -Command "$script=[System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${installScript}'));$path='C:\Windows\Temp\install-windows-agent.ps1';Set-Content -Path $path -Value $script -Force; & $path -calderaServerIp ${calderaServerIp} -elkServerIp ${elkServerIp}"
+'''
     }
+  }
+}
+
+// Send platform metrics to Log Analytics when provided
+resource vmDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (!empty(logAnalyticsWorkspaceId)) {
+  name: 'vm-windows-agent-diagnostics'
+  scope: vm
+  properties: {
+    workspaceId: logAnalyticsWorkspaceId
+    metrics: [
+      {
+        category: 'AllMetrics'
+        enabled: true
+        retentionPolicy: {
+          days: 0
+          enabled: false
+        }
+      }
+    ]
+    logs: []
   }
 }
 

@@ -9,6 +9,13 @@ param adminUsername string
 param adminPassword string
 param sshPublicKey string
 param subnetId string
+@description('Optional Log Analytics Workspace resource ID for diagnostics')
+param logAnalyticsWorkspaceId string = ''
+
+@description('Storage account type for OS disk (use Standard_LRS for Free/Student accounts if Premium fails)')
+@allowed(['Premium_LRS', 'Standard_LRS', 'StandardSSD_LRS'])
+param osDiskType string = 'Premium_LRS'
+
 param tags object
 
 var vmName = 'vm-caldera-elk-${environment}'
@@ -67,14 +74,14 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-07-01' = {
       adminPassword: adminPassword
       linuxConfiguration: {
         disablePasswordAuthentication: false
-        ssh: {
-          publicKeys: empty(sshPublicKey) ? [] : [
+        ssh: !empty(sshPublicKey) ? {
+          publicKeys: [
             {
               path: '/home/${adminUsername}/.ssh/authorized_keys'
               keyData: sshPublicKey
             }
           ]
-        }
+        } : null
       }
     }
     storageProfile: {
@@ -88,7 +95,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-07-01' = {
         name: osDiskName
         createOption: 'FromImage'
         managedDisk: {
-          storageAccountType: 'Premium_LRS'
+          storageAccountType: osDiskType
         }
         diskSizeGB: 256 // Increased for both apps
       }
@@ -103,6 +110,9 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-07-01' = {
   }
 }
 
+@secure()
+param installScript string
+
 resource vmExtension 'Microsoft.Compute/virtualMachines/extensions@2023-07-01' = {
   parent: vm
   name: 'caldera-elk-setup'
@@ -112,12 +122,30 @@ resource vmExtension 'Microsoft.Compute/virtualMachines/extensions@2023-07-01' =
     type: 'CustomScript'
     typeHandlerVersion: '2.1'
     autoUpgradeMinorVersion: true
-    settings: {
-      fileUris: [
-        'https://raw.githubusercontent.com/L1quidDroid/caldera/main/bicep/scripts/install-caldera-elk.sh'
-      ]
-      commandToExecute: 'bash install-caldera-elk.sh ${adminUsername}'
+    // Decode provided base64 payload into an executable script to avoid inline quoting issues
+    protectedSettings: {
+      commandToExecute: 'bash -c "echo ${installScript} | base64 -d > /tmp/install-caldera-elk.sh && chmod +x /tmp/install-caldera-elk.sh && /tmp/install-caldera-elk.sh"'
     }
+  }
+}
+
+// Send platform metrics to Log Analytics when provided
+resource vmDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (!empty(logAnalyticsWorkspaceId)) {
+  name: 'vm-caldera-elk-diagnostics'
+  scope: vm
+  properties: {
+    workspaceId: logAnalyticsWorkspaceId
+    metrics: [
+      {
+        category: 'AllMetrics'
+        enabled: true
+        retentionPolicy: {
+          days: 0
+          enabled: false
+        }
+      }
+    ]
+    logs: []
   }
 }
 

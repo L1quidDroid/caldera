@@ -1,0 +1,71 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environment": {
+      "value": "dev"
+    },
+    "location": {
+      "value": "australiaeast"
+    },
+    "ownerTag": {
+      "value": "tonyto"
+    },
+    "costCenter": {
+      "value": "cybersec-purple-team"
+    },
+    "attackTactic": {
+      "value": "TA0001"
+    },
+    "enableAtomicRedTeam": {
+      "value": false
+    },
+    "deployAgents": {
+      "value": false
+    },
+    "managementCidr": {
+      "value": "117.102.155.30/32"
+    },
+    "adminUsername": {
+      "value": "calderaadmin"
+    },
+    "adminPassword": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/{subscription-id}/resourceGroups/{rg-name}/providers/Microsoft.KeyVault/vaults/{vault-name}"
+        },
+        "secretName": "adminPassword"
+      }
+    },
+    "sshPublicKey": {
+      "value": ""
+    },
+    "calderaElkInstallScript": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/{subscription-id}/resourceGroups/{rg-name}/providers/Microsoft.KeyVault/vaults/{vault-name}"
+        },
+        "secretName": "calderaElkInstallScript"
+      }
+    },
+    "windowsAgentInstallScript": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/{subscription-id}/resourceGroups/{rg-name}/providers/Microsoft.KeyVault/vaults/{vault-name}"
+        },
+        "secretName": "windowsAgentInstallScript"
+      }
+    },
+    "linuxAgentInstallScript": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/{subscription-id}/resourceGroups/{rg-name}/providers/Microsoft.KeyVault/vaults/{vault-name}"
+        },
+        "secretName": "linuxAgentInstallScript"
+      }
+    },
+    "deploymentId": {
+      "value": "keyvault-ref-example"
+    }
+  }
+}

@@ -17,6 +17,7 @@ Usage:
 """
 
 import argparse
+import os
 import sys
 import json
 from typing import Dict, List, Tuple
@@ -36,6 +37,12 @@ except ImportError:
 console = Console()
 
 
+def get_ssl_verify() -> bool:
+    """Get SSL verification setting from environment."""
+    ssl_verify = os.getenv('SSL_VERIFY', 'true').lower()
+    return ssl_verify not in ('false', '0', 'no', 'off')
+
+
 class CalderaHealthCheck:
     """Comprehensive health check for Caldera instance."""
 
@@ -44,13 +51,19 @@ class CalderaHealthCheck:
         caldera_url: str = "http://localhost:8888",
         api_key_red: str = "ADMIN123",
         api_key_blue: str = "BLUEADMIN123",
-        timeout: int = 10
+        timeout: int = 10,
+        ssl_verify: bool = None
     ):
         self.caldera_url = caldera_url.rstrip('/')
         self.api_key_red = api_key_red
         self.api_key_blue = api_key_blue
         self.timeout = timeout
+        # Use environment variable if not explicitly set
+        self.ssl_verify = ssl_verify if ssl_verify is not None else get_ssl_verify()
         self.results: List[Tuple[str, str, bool, str]] = []
+        
+        if not self.ssl_verify:
+            console.print("[yellow]⚠️  SSL verification disabled - use only in development[/yellow]")
 
     def _make_request(
         self,
@@ -72,9 +85,9 @@ class CalderaHealthCheck:
         
         try:
             if method == 'GET':
-                response = requests.get(url, headers=headers, timeout=self.timeout, verify=False)
+                response = requests.get(url, headers=headers, timeout=self.timeout, verify=self.ssl_verify)
             else:
-                response = requests.request(method, url, headers=headers, timeout=self.timeout, verify=False)
+                response = requests.request(method, url, headers=headers, timeout=self.timeout, verify=self.ssl_verify)
             
             if response.status_code >= 200 and response.status_code < 300:
                 try:

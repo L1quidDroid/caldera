@@ -8,6 +8,8 @@
 param location string
 param environment string
 param tags object
+@description('CIDR allowed for management/UI access (SSH/RDP/HTTP/Kibana/Caldera)')
+param managementCidr string = '0.0.0.0/0'
 
 var vnetName = 'vnet-caldera-${environment}'
 var calderaSubnetName = 'snet-caldera-server'
@@ -74,7 +76,7 @@ resource nsgCaldera 'Microsoft.Network/networkSecurityGroups@2023-05-01' = {
           protocol: 'Tcp'
           sourcePortRange: '*'
           destinationPortRange: '22'
-          sourceAddressPrefix: '*'
+          sourceAddressPrefix: managementCidr
           destinationAddressPrefix: '*'
           description: 'Allow SSH for management'
         }
@@ -88,7 +90,7 @@ resource nsgCaldera 'Microsoft.Network/networkSecurityGroups@2023-05-01' = {
           protocol: 'Tcp'
           sourcePortRange: '*'
           destinationPortRange: '8888'
-          sourceAddressPrefix: '*'
+          sourceAddressPrefix: managementCidr
           destinationAddressPrefix: '*'
           description: 'Allow CALDERA web UI'
         }
@@ -124,7 +126,7 @@ resource nsgCaldera 'Microsoft.Network/networkSecurityGroups@2023-05-01' = {
             '443'
             '8080'
           ]
-          sourceAddressPrefix: '*'
+          sourceAddressPrefix: managementCidr
           destinationAddressPrefix: '*'
           description: 'Allow HTTP/HTTPS'
         }
@@ -149,7 +151,7 @@ resource nsgElk 'Microsoft.Network/networkSecurityGroups@2023-05-01' = {
           protocol: 'Tcp'
           sourcePortRange: '*'
           destinationPortRange: '22'
-          sourceAddressPrefix: '*'
+          sourceAddressPrefix: managementCidr
           destinationAddressPrefix: '*'
           description: 'Allow SSH for management'
         }
@@ -163,7 +165,7 @@ resource nsgElk 'Microsoft.Network/networkSecurityGroups@2023-05-01' = {
           protocol: 'Tcp'
           sourcePortRange: '*'
           destinationPortRange: '5601'
-          sourceAddressPrefix: '*'
+          sourceAddressPrefix: managementCidr
           destinationAddressPrefix: '*'
           description: 'Allow Kibana web UI'
         }
@@ -216,7 +218,7 @@ resource nsgAgents 'Microsoft.Network/networkSecurityGroups@2023-05-01' = {
           protocol: 'Tcp'
           sourcePortRange: '*'
           destinationPortRange: '22'
-          sourceAddressPrefix: '*'
+          sourceAddressPrefix: managementCidr
           destinationAddressPrefix: '*'
           description: 'Allow SSH for Linux agents'
         }
@@ -230,7 +232,7 @@ resource nsgAgents 'Microsoft.Network/networkSecurityGroups@2023-05-01' = {
           protocol: 'Tcp'
           sourcePortRange: '*'
           destinationPortRange: '3389'
-          sourceAddressPrefix: '*'
+          sourceAddressPrefix: managementCidr
           destinationAddressPrefix: '*'
           description: 'Allow RDP for Windows agents'
         }

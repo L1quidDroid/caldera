@@ -1,0 +1,66 @@
+# Example Automated Sequence: Discovery Phase
+# This sequence demonstrates automated discovery with fact chaining and failure recovery
+
+name: "Discovery and Lateral Movement Sequence"
+description: "Automated reconnaissance, credential access, and lateral movement"
+
+steps:
+  # Step 1: Initial Discovery
+  - name: "Host Discovery"
+    adversary_id: "de07f52d-9928-4071-9142-cb1d3bd851e8"  # Example adversary ID
+    agent_group: "red"
+    planner: "atomic"
+    autonomous: 1
+    critical: true  # If this fails, abort sequence
+    on_fail: "retry"  # Options: retry|skip|fallback
+    max_retries: 3
+    
+  # Step 2: Process Discovery (inherits facts from step 1)
+  - name: "Process Enumeration"
+    adversary_id: "de07f52d-9928-4071-9142-cb1d3bd851e8"
+    agent_group: "red"
+    planner: "atomic"
+    inherit_facts: true
+    fact_filters:
+      - "host.*"
+      - "domain.*"
+    on_fail: "retry"
+    
+  # Step 3: Credential Dumping with fallback
+  - name: "Credential Access"
+    adversary_id: "credential-access-adversary"
+    agent_group: "red"
+    planner: "atomic"
+    inherit_facts: true
+    fact_filters:
+      - "host.hostname"
+      - "host.user.*"
+    on_fail: "fallback"
+    fallback_adversary_id: "credential-access-light"  # Less aggressive tactics
+    critical: false
+    
+  # Step 4: Lateral Movement (chains credentials from step 3)
+  - name: "Lateral Movement"
+    adversary_id: "lateral-movement-adversary"
+    agent_group: "red"
+    planner: "batch"
+    inherit_facts: true
+    fact_filters:
+      - "host.*"
+      - "user.password"
+      - "user.name"
+      - "domain.*"
+    on_fail: "skip"  # Non-critical, continue even if it fails
+    critical: false
+
+  # Step 5: Exfiltration Prep
+  - name: "Data Staging"
+    adversary_id: "collection-adversary"
+    agent_group: "red"
+    planner: "atomic"
+    inherit_facts: true
+    fact_filters:
+      - "file.path"
+      - "host.dir.*"
+    on_fail: "retry"
+    critical: false

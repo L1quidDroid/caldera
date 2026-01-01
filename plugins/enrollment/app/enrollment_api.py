@@ -2,9 +2,56 @@
 Enrollment API - REST endpoints following CALDERA patterns
 """
 
+import os
+import hmac
 from aiohttp import web
 import json
 from typing import Optional
+from functools import wraps
+
+
+def require_api_key(handler):
+    """
+    Decorator to require API key authentication for enrollment endpoints.
+    
+    Supports two authentication methods:
+    1. X-Api-Key header (preferred)
+    2. api_key query parameter (for bootstrap scripts)
+    
+    If ENROLLMENT_API_KEY is not set, authentication is bypassed (dev mode).
+    """
+    @wraps(handler)
+    async def wrapper(self, request):
+        enrollment_api_key = os.getenv('ENROLLMENT_API_KEY', '')
+        
+        # If no API key configured, allow unauthenticated access (dev mode)
+        if not enrollment_api_key:
+            self.log.warning('ENROLLMENT_API_KEY not set - running in unauthenticated mode')
+            return await handler(self, request)
+        
+        # Check X-Api-Key header first
+        request_key = request.headers.get('X-Api-Key', '')
+        
+        # Fall back to query parameter
+        if not request_key:
+            request_key = request.query.get('api_key', '')
+        
+        # Also accept Caldera's standard API keys
+        caldera_api_key_red = os.getenv('CALDERA_API_KEY_RED', '')
+        caldera_api_key_blue = os.getenv('CALDERA_API_KEY_BLUE', '')
+        
+        # Timing-safe comparison to prevent timing attacks
+        valid_keys = [k for k in [enrollment_api_key, caldera_api_key_red, caldera_api_key_blue] if k]
+        
+        if not any(hmac.compare_digest(request_key, key) for key in valid_keys):
+            self.log.warning(f'Unauthorized enrollment API access attempt from {request.remote}')
+            return web.json_response(
+                {'error': 'Unauthorized - valid API key required'},
+                status=401
+            )
+        
+        return await handler(self, request)
+    return wrapper
 
 
 class EnrollmentAPI:
@@ -34,7 +81,7 @@ class EnrollmentAPI:
     
     async def health_check(self, request):
         """
-        Health check endpoint.
+        Health check endpoint (no authentication required).
         
         GET /plugin/enrollment/health
         
@@ -46,9 +93,11 @@ class EnrollmentAPI:
             'service': 'enrollment',
             'caldera_url': self.enrollment_svc.caldera_url,
             'storage_path': str(self.enrollment_svc.storage_path),
-            'total_requests': len(self.enrollment_svc.enrollment_requests)
+            'total_requests': len(self.enrollment_svc.enrollment_requests),
+            'auth_required': bool(os.getenv('ENROLLMENT_API_KEY', ''))
         })
     
+    @require_api_key
     async def enroll_agent(self, request):
         """
         Create new agent enrollment request.
@@ -116,6 +165,7 @@ class EnrollmentAPI:
                 status=500
             )
     
+    @require_api_key
     async def get_enrollment_status(self, request):
         """
         Get enrollment request status.
@@ -137,6 +187,7 @@ class EnrollmentAPI:
         
         return web.json_response(enrollment)
     
+    @require_api_key
     async def list_enrollment_requests(self, request):
         """
         List enrollment requests with optional filters.
@@ -170,6 +221,7 @@ class EnrollmentAPI:
             'requests': results
         })
     
+    @require_api_key
     async def list_campaign_agents(self, request):
         """
         List all agents enrolled for a campaign.

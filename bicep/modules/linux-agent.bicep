@@ -13,7 +13,6 @@ param adminPassword string
 param sshPublicKey string
 param subnetId string
 param calderaServerIp string
-param logAnalyticsWorkspaceId string
 param tags object
 
 var vmName = 'vm-linux-agent-${environment}'

@@ -6,6 +6,8 @@ Provides webhook publishing, SIEM integration, and campaign management APIs.
 """
 
 import logging
+import re
+from urllib.parse import urlparse
 
 from aiohttp import web
 
@@ -13,6 +15,57 @@ name = 'Orchestrator'
 description = 'Multi-phase campaign orchestration with webhooks and SIEM integration'
 address = '/plugin/orchestrator'
 access = None  # Available to all access levels
+
+
+def validate_webhook_url(url: str) -> tuple[bool, str]:
+    """
+    Validate webhook URL for security and correctness.
+    
+    Returns:
+        (is_valid, error_message)
+    """
+    if not url:
+        return False, "URL is required"
+    
+    try:
+        parsed = urlparse(url)
+    except Exception as e:
+        return False, f"Invalid URL format: {e}"
+    
+    # Must have a scheme
+    if not parsed.scheme:
+        return False, "URL must include scheme (http:// or https://)"
+    
+    # Only allow http/https
+    if parsed.scheme not in ('http', 'https'):
+        return False, f"Invalid scheme: {parsed.scheme}. Only http/https allowed"
+    
+    # Must have a host
+    if not parsed.netloc:
+        return False, "URL must include a host"
+    
+    # Block obviously dangerous URLs
+    dangerous_patterns = [
+        r'^localhost$',
+        r'^127\.',
+        r'^0\.',
+        r'^10\.',
+        r'^172\.(1[6-9]|2[0-9]|3[0-1])\.',
+        r'^192\.168\.',
+        r'^169\.254\.',
+        r'^::1$',
+        r'^fe80:',
+    ]
+    
+    host = parsed.hostname or ''
+    for pattern in dangerous_patterns:
+        if re.match(pattern, host, re.IGNORECASE):
+            # Allow internal URLs if explicitly enabled via environment
+            import os
+            if not os.getenv('ALLOW_INTERNAL_WEBHOOKS', '').lower() in ('true', '1', 'yes'):
+                return False, f"Internal/private IP addresses not allowed: {host}. Set ALLOW_INTERNAL_WEBHOOKS=true to override."
+    
+    return True, ""
 
 async def enable(services):
     """
@@ -199,7 +252,7 @@ python3 orchestrator/health_check.py --url=http://localhost:8888</code></pre>
         return web.json_response(stats)
 
     async def register_webhook(self, request):
-        """Register a new webhook endpoint."""
+        """Register a new webhook endpoint with URL validation."""
         try:
             data = await request.json()
             url = data.get('url')
@@ -210,6 +263,12 @@ python3 orchestrator/health_check.py --url=http://localhost:8888</code></pre>
             
             if not url:
                 return web.json_response({'error': 'URL required'}, status=400)
+            
+            # Validate URL for security
+            is_valid, error_msg = validate_webhook_url(url)
+            if not is_valid:
+                self.log.warning(f"Rejected invalid webhook URL: {url} - {error_msg}")
+                return web.json_response({'error': error_msg}, status=400)
             
             self.webhook_publisher.register_webhook(url, name, headers, filters, enabled)
             

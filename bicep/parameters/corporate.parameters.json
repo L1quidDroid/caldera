@@ -1,0 +1,57 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "_comment": "CORPORATE/PAY-AS-YOU-GO PARAMETERS - Full deployment with agents",
+  "parameters": {
+    "environment": {
+      "value": "dev"
+    },
+    "location": {
+      "value": "australiaeast"
+    },
+    "osDiskType": {
+      "value": "Premium_LRS",
+      "metadata": {
+        "_comment": "Premium_LRS for better performance in corporate environments"
+      }
+    },
+    "ownerTag": {
+      "value": "cybersec-team"
+    },
+    "costCenter": {
+      "value": "cybersec-purple-team"
+    },
+    "attackTactic": {
+      "value": "TA0001"
+    },
+    "deployAgents": {
+      "value": true,
+      "metadata": {
+        "_comment": "Deploy Windows + Linux agents (requires 4 vCPUs total)"
+      }
+    },
+    "managementCidr": {
+      "value": "10.0.0.0/8",
+      "metadata": {
+        "_comment": "Corporate network CIDR - restrict to VPN/office ranges"
+      }
+    },
+    "adminUsername": {
+      "value": "calderaadmin"
+    },
+    "adminPassword": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/{subscription-id}/resourceGroups/{rg-name}/providers/Microsoft.KeyVault/vaults/{vault-name}"
+        },
+        "secretName": "adminPassword"
+      }
+    },
+    "sshPublicKey": {
+      "value": ""
+    },
+    "calderaElkInstallScript": {
+      "value": "TO_BE_ENCODED"
+    }
+  }
+}
