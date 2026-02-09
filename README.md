@@ -1,7 +1,28 @@
-[![Release](https://img.shields.io/badge/dynamic/json?color=blue&label=Release&query=tag_name&url=https%3A%2F%2Fapi.github.com%2Frepos%2Fmitre%2Fcaldera%2Freleases%2Flatest)](https://github.com/mitre/caldera/releases/latest)
-[![Testing Status](https://github.com/mitre/caldera/actions/workflows/quality.yml/badge.svg?branch=master)](https://github.com/mitre/caldera/actions/workflows/quality.yml?query=branch%3Amaster)
-[![Security Status](https://github.com/mitre/caldera/actions/workflows/security.yml/badge.svg?branch=master)](https://github.com/mitre/caldera/actions/workflows/security.yml?query=branch%3Amaster)
-[![codecov](https://codecov.io/gh/mitre/caldera/branch/master/graph/badge.svg)](https://codecov.io/gh/mitre/caldera)
+> ## 📦 ARCHIVE NOTICE
+> 
+> **This repository is archived and no longer actively maintained.**
+> 
+> This is a snapshot of MITRE Caldera v5.0.0 (Triskele Labs Enhanced) as of **February 10, 2026**.  
+> It includes custom orchestration features (Phases 1-6) developed for multi-environment campaign  
+> management, webhook integration, and PDF reporting capabilities.
+> 
+> **For the actively maintained MITRE Caldera project:**
+> - Official Repository: https://github.com/mitre/caldera
+> - Documentation: https://caldera.readthedocs.io
+> 
+> **This archived version includes:**
+> - Global orchestration pattern for campaign management
+> - Dynamic agent enrollment REST API
+> - ELK Stack integration with webhook publishing
+> - PDF reporting with ATT&CK Navigator visualisations
+> - Azure deployment templates (Bicep IaC)
+> 
+> The code is provided as-is for reference purposes. No updates, bug fixes, or support  
+> will be provided. Issues and pull requests are disabled.
+
+---
+
+[![Release](https://img.shields.io/badge/release-v5.0.0-blue)](https://github.com/mitre/caldera/releases)
 [![Documentation Status](https://readthedocs.org/projects/caldera/badge/?version=stable)](http://caldera.readthedocs.io/?badge=stable)
 
 # MITRE Caldera&trade;
@@ -42,12 +63,6 @@ flowchart TD
 * ✍️ [Caldera's blog](https://medium.com/@mitrecaldera/welcome-to-the-official-mitre-caldera-blog-page-f34c2cdfef09)
 * 🌐 [Homepage](https://caldera.mitre.org)
 
-### User Survey
-
-It is always incredibly helpful for our team to hear from users about their Caldera use cases and the value that Caldera provides for their learning, research, or cyber security work. If you or your team uses Caldera significantly, we would greatly appreciate hearing from you.
-
-📋 **Survey** - https://forms.office.com/g/ByBWxYTf8e
-
 ## Plugins
 
 :star: Create your own plugin! Plugin generator: **[Skeleton](https://github.com/mitre/skeleton)** :star:
@@ -74,30 +89,12 @@ These plugins are supported and maintained by the Caldera team.
 - **[Training](https://github.com/mitre/training)** (certification and training course)
 
 ### Custom Enhancements (Triskele Labs)
-- **Enrollment** (Phase 5 - Dynamic agent enrollment REST API for CI/CD integration)
-- **Orchestrator** (Phase 3 - Webhook publisher and SIEM integration)
-- **Global Orchestration** (Phase 1-5 - Campaign management, agent automation, and reporting)
+- **Enrollment** (Dynamic agent enrollment REST API for CI/CD integration)
+- **Orchestrator** (Webhook publisher and SIEM integration)
+- **Sequencer** (Campaign sequencing and operation chaining)
+- **Branding** (Custom UI theming for Triskele Labs)
 
-See [ORCHESTRATION_GUIDE.md](ORCHESTRATION_GUIDE.md) for complete implementation details.
-
-## Implementation Status
-
-| Phase | Feature | Status | Completion | Notes |
-|-------|---------|--------|------------|-------|
-| 1-3 | Campaign Management, Webhook Publisher, SIEM Integration | ✅ Complete | 100% | Production ready |
-| 4 | Automated Operation Execution | 🚧 Partial | 60% | CLI commands functional, full automation pending |
-| 5 | Dynamic Agent Enrollment REST API | ✅ Complete | 100% | Production ready, 50+ tests passing |
-| 6 | PDF Reporting with Branding | ✅ Complete | 100% | Production ready with Triskele branding |
-
-### Phase 4 Status Details
-- ✅ **Functional**: Manual operation start via CLI
-- ✅ **Functional**: Status monitoring and progress tracking  
-- ✅ **Functional**: Campaign-as-code with YAML specifications
-- 🚧 **In Progress**: Automated sequencing and failure recovery
-- 🚧 **In Progress**: Advanced scheduling and orchestration
-- 🚧 **Planned**: Auto-remediation on agent failure
-
-See [ROADMAP.md](ROADMAP.md) for Phase 4 completion timeline.
+See [ORCHESTRATION_GUIDE.md](ORCHESTRATION_GUIDE.md) for implementation details.
 
 ### More
 These plugins are ready to use but are not included by default and are not maintained by the Caldera team.
@@ -164,53 +161,11 @@ docker build --build-arg VARIANT=full -t caldera .
 docker run -it -p 8888:8888 caldera
 ```
 
-Adjust the port forwarding (`-p`) and build args (`--build-arg`) as desired to make ports accessible or change the Caldera variant. The ports that you expose depend on which contacts you plan on using (see `Dockerfile` and `docker-compose.yml` for reference).
-
-Pre-Built Image (from GitHub Container Registry):
-```sh
-docker run -p 8888:8888 ghcr.io/mitre/caldera:latest
-```
-This container may be slightly outdated, we recommend building the container yourself.
-
-To gracefully terminate your docker container, do the following:
-```sh
-# Find the container ID for your docker container running Caldera
-docker ps
-
-# Stop the container
-docker stop <container ID>
-```
-
-There are two variants available, *full* and *slim*. The *slim* variant doesn't include files necessary for the `emu` and `atomic` plugins, which will be downloaded on-demand if the plugins are ever enabled. The *full* variant is suitable for operation in environments without an internet connection. Slim images on GHCR are prefixed with "slim".
-
-**Docker Container Notes**
-- The Caldera container will automatically generate keys/usernames/password on first start.
-- If you wish to override the default configuration or avoid automatically generated keys/passwords, consider bind-mounting your own configuration file with the `-v <your_path>/conf.yml:/usr/src/app/conf/local.yml` flag.
-- Data stored by Caldera is ephemeral by default. If you wish to make it persistent, use docker volumes and/or bind mounts (`-v <path_to_your_data_or_volume_name>:/usr/src/app/data/`). Ensure that the directory structure is the same as in the `data/` directory on GitHub, as Caldera will refuse to create these sub-directories if they are missing. Lastly, make sure that the configuration file is also made persistent to prevent issues with encryption keys.
-- The `builder` plugin will not work within Docker.
-- If you wish to modify data used by the `atomic` plugin, clone the `Atomic Red Team` repository outside the container, apply your modifications and bind-mount it (`-v`) to `/usr/src/app/plugins/atomic/data/atomic-red-team` within the container.
-- If you wish to modify data used by `emu`, clone the `adversary_emulation_library` repository locally and bind-mount it (`-v`) to `/usr/src/app/plugins/emu/data/adversary-emulation-plans`.
-
-**Additionally, please note [security recommendations](#Security) for deploying Caldera.**
-
-### User Interface Development
-
-If you'll be developing the UI, there are a few more additional installation steps.
-
-**Requirements**  
-* NodeJS (v16+ recommended)
-
-**Setup**
-
-1. Add the Magma submodule if you haven't already: `git submodule add https://github.com/mitre/magma`
-1. Install NodeJS dependencies: `cd plugins/magma && npm install && cd ..`
-1. Start the Caldera server with an additional flag: `python3 server.py --uidev localhost`
-
-Your Caldera server is available at http://localhost:8888 as usual, but there will now be a hot-reloading development server for the VueJS front-end available at http://localhost:3000. Both logs from the server and the front-end will display in the terminal you launched the server from.
+Adjust the port forwarding (`-p`) and build args (`--build-arg`) as desired. The ports exposed depend on which contacts you plan on using (see `Dockerfile` and `docker-compose.yml` for reference).
 
 ## Security
 
-The Caldera team highly reccommends standing up the Caldera server on a secure environment/network, and not exposing it to the internet. The Caldera server does not have a hardened and thoroughly pentested web application interface, but only basic authentication and security features. Both MITRE and MITRE's US Government sponsors nearly exclusively only use Caldera on secure environments and do not rely on Caldera's own security protocols for proper cyber security.
+The Caldera team highly recommends standing up the Caldera server on a secure environment/network, and not exposing it to the internet. The Caldera server does not have a hardened and thoroughly pentested web application interface, but only basic authentication and security features. Both MITRE and MITRE's US Government sponsors nearly exclusively only use Caldera on secure environments and do not rely on Caldera's own security protocols for proper cyber security.
 
 ### Vulnerability Disclosures
 
@@ -220,14 +175,6 @@ Refer to our [Vulnerability Disclosure Documentation](SECURITY.md) for submittin
 
 `🚨Security Notice🚨`: (17 Feb 2025 10:00 EST) Please pull v5.1.0+ for a recent security patch for [CVE-2025-27364](https://www.cve.org/CVERecord?id=CVE-2025-27364). Please update your Caldera instance, especially if you host Caldera on a publicly accessible network. [Vulnerability walkthrough.](https://medium.com/@mitrecaldera/mitre-caldera-security-advisory-remote-code-execution-cve-2025-27364-5f679e2e2a0e)
 
-## Contributing
-
-Refer to our [contributor documentation](CONTRIBUTING.md).
-
 ## Licensing
 
 To discuss licensing opportunities, please reach out to caldera@mitre.org or directly to [MITRE's Technology Transfer Office](https://www.mitre.org/about/corporate-overview/contact-us#technologycontact).
-
-## Caldera Benefactor Program
-
-If you are interested in partnering to support, sustain, and evolve MITRE Caldera&trade;'s open source capabilities, please contact us at caldera@mitre.org.

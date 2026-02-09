@@ -1,5 +1,9 @@
 # Vulnerability Disclosure Policy 
 
+> **⚠️ ARCHIVE NOTICE**: This repository is archived as of February 10, 2026 and is no longer maintained.  
+> For security issues in the actively maintained MITRE Caldera project, please visit:  
+> https://github.com/mitre/caldera/security
+
 ## Introduction
 
 This policy is intended to give security researchers clear guidelines for conducting vulnerability discovery activities and to convey our preferences in how to submit discovered vulnerabilities to us.

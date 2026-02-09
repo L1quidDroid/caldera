@@ -36,7 +36,6 @@
 │ PURPOSE: Execute multi-phase operations with orchestration           │
 │ COMMAND: python orchestrator/cli.py campaign start <campaign_id>    │
 │ STATUS:  python orchestrator/cli.py campaign status <campaign_id>   │
-│ NOTE:    ⚠️ Full orchestration in development, use UI for ops       │
 └─────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────┐
