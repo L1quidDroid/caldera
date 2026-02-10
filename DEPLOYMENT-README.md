@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository contains a **production-ready** Infrastructure as Code (Bicep) deployment for CALDERA adversary emulation platform with integrated ELK Stack (Elasticsearch, Kibana, Logstash) on Azure.
+This repository contains a **Test enviroment** Infrastructure as Code (Bicep) deployment for CALDERA adversary emulation platform with integrated ELK Stack (Elasticsearch, Kibana, Logstash) on Azure.
 
 ### Architecture
 
